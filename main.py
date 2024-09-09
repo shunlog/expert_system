@@ -6,7 +6,28 @@ from production import (forward_chain, backward_chain, match, populate, RuleExpr
 from icecream import ic
 
 
-def backchain(rules: [IF], hypothesis: str):
+class GoalTree():
+    '''
+    A GoalTree instance represents a node with all its antecedents in a goal tree.
+    A GoalTree has two parts:
+    1. node: the string that represents a node in a goal tree, i.e. the consequent
+    2. expr: the RuleExpression that represents the antecedents of that node,
+             or None if the node is a leaf.
+    '''
+    def __init__(self, node: str, expr: RuleExpression = None):
+        self.node = node
+        self.expr = expr
+
+    def __str__(self):
+        if not self.expr:
+            return self.node
+        return {self.node: self.expr.__str__()}
+
+    def __repr__(self):
+        return str(self.__str__())
+    
+
+def backchain(rules: [IF], hypothesis: str) -> GoalTree:
     '''
     - rules: iterable of IF rules, following the 3 restrictions
     - hypothesis: a string for which the goal tree will be built
@@ -16,21 +37,19 @@ def backchain(rules: [IF], hypothesis: str):
         '''Given a matching rule, return the Goal tree formed from it'''
         antecedent = rule.antecedent()
         
-        variables_dict = match(rule.consequent()[0], hypothesis)
-        def replace_vars(pattern):
-            return instantiate(pattern, variables_dict)
-
-        def backchain_clauses(clauses):
-            return (backchain(rules, replace_vars(clause)) for clause in clauses)
+        if isinstance(antecedent, str):
+            return antecedent
         
         # Note that we restricted the antecedents to be one of:
         # AND, OR, str
-        if isinstance(antecedent, str):
-            return replace_vars(antecedent)
-        elif isinstance(antecedent, AND):  
-            return AND(*backchain_clauses(antecedent))
+        variables_dict = match(rule.consequent()[0], hypothesis)
+        instantiated_clauses = [instantiate(clause, variables_dict) for clause in antecedent]
+        if len(instantiated_clauses) == 1:
+            return backchain(rules, instantiated_clauses[0])
+        elif isinstance(antecedent, AND):
+            return AND(*(backchain(rules, clause) for clause in instantiated_clauses))
         elif isinstance(antecedent, OR):
-            return OR(*backchain_clauses(antecedent))
+            return OR(*(backchain(rules, clause) for clause in instantiated_clauses))
         else:
             assert False
 
@@ -46,9 +65,13 @@ def backchain(rules: [IF], hypothesis: str):
     
     matching_rules = [r for r in rules if rule_matches(r)]
     if len(matching_rules) == 0:
-        return hypothesis
+        return GoalTree(hypothesis)
     else:
-        return simplify(OR(hypothesis, *(backchain_rule(r) for r in matching_rules)))
+        if len(matching_rules) == 1:
+            expr = backchain_rule(matching_rules[0])
+        else:
+            expr = OR([backchain_rule(r) for r in matching_rules])
+        return GoalTree(hypothesis, expr)
 
 
 def test_leaf_node():
@@ -100,18 +123,44 @@ def test_variable_instantiation():
     
 def test_ZOO_example():
     # nested example, traversing all the possible code paths
-    expected = OR( 
-        'opus is a penguin', 
-        AND(
-            OR('opus is a bird',
-               'opus has feathers',
-               AND('opus flies', 'opus lays eggs')),
+
+    # The original exercise asks for this representation of the goal tree:
+    # expected = OR( 
+    #     'opus is a penguin', 
+    #     AND(
+    #         OR('opus is a bird',
+    #            'opus has feathers',
+    #            AND('opus flies', 'opus lays eggs')),
+    #         'opus does not fly', 
+    #         'opus swims', 
+    #         'opus has black and white color' ))
+    # but this representation makes it difficult to tell what are the intermediate facts
+    # and what are their definition rules.
+    # My GoalTree data structure solves this issue.
+
+    expected = GoalTree(
+        'opus is a penguin',
+        AND(GoalTree('opus is a bird',
+                     OR('opus has feathers',
+                        AND('opus flies', 'opus lays eggs'))),
             'opus does not fly', 
             'opus swims', 
-            'opus has black and white color' ))
+            'opus has black and white color'))
     
     assert backchain(ZOOKEEPER_RULES, 'opus is a penguin') == expected
     
 
 if __name__=='__main__':
-     ic(backchain(ZOOKEEPER_RULES, 'opus is a giraffe'))
+    goal_tree = backchain(ZOOKEEPER_RULES, 'opus is a penguin')
+
+    goal_obj = goal_tree.__str__()
+    
+    # from pprint import pp
+    # pp(goal_obj, compact=False)
+
+    import json
+    print(json.dumps(goal_obj, indent=4))
+
+    
+    
+

@@ -207,6 +207,8 @@ class IF(object):
 
     __repr__ = __str__
 
+    
+    
 class RuleExpression(list):
     """
     The parent class of AND, OR, and NOT expressions.
@@ -231,10 +233,14 @@ class RuleExpression(list):
         return list(self)
 
     def __str__(self):
+        return {self.__class__.__name__: [x.__str__() for x in self]}
+    
         return '%s(%s)' % (self.__class__.__name__, 
                            ', '.join([repr(x) for x in self]) )
+    
+    def __repr__(self):
+        return str(self.__str__())
 
-    __repr__ = __str__
         
     def test_term_matches(self, condition, rules, 
                           context_so_far = None):
