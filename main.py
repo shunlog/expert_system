@@ -3,7 +3,9 @@
 from rules_example_zookeeper import ZOOKEEPER_RULES, ZOO_DATA
 from production import (forward_chain, backward_chain, match, populate, RuleExpression,
                         IF, THEN, AND, OR, DELETE, simplify, instantiate)
+from collections import defaultdict
 from icecream import ic
+
 
 
 class GoalTree():
@@ -25,11 +27,64 @@ class GoalTree():
 
     def __repr__(self):
         return str(self.__str__())
-    
+
+    def compute_cost(self, costs = None):
+        if costs == None:
+            costs = defaultdict(lambda : [0.0, 0.0])
+            
+        if costs[self.node] == [0.0, 0.0]:
+            # assuming current node is a root node,
+            # so giving it an initial value
+            costs[self.node] = [1.0, 1.0]
+        
+        cost = costs[self.node]
+        
+        if self.expr is None:
+            pass
+
+        elif isinstance(self.expr, AND):
+            yes_cost = cost[0] / len(self.expr)  # all needed for True
+            no_cost = cost[1]  # one enough for False
+            for clause in self.expr:
+                assert(isinstance(clause, GoalTree))
+                costs[clause.node][0] += yes_cost
+                costs[clause.node][1] += no_cost
+                clause.compute_cost(costs)
+
+        elif isinstance(self.expr, OR):
+            OR_yes_cost = cost[0]  # one enough for True
+            OR_no_cost = cost[1] / len(self.expr)  # all needed for False
+
+            for or_clause in self.expr:
+                if isinstance(or_clause, GoalTree):
+                    costs[or_clause.node][0] += OR_yes_cost
+                    costs[or_clause.node][1] += OR_no_cost
+                    or_clause.compute_cost(costs)
+                    
+                elif isinstance(or_clause, AND):
+                    AND_yes_cost = OR_yes_cost / len(or_clause)  # all needed for True
+                    AND_no_cost = OR_no_cost  # one enough for False
+                    for and_clause in or_clause:
+                        assert(isinstance(and_clause, GoalTree))
+                        costs[and_clause.node][0] += AND_yes_cost
+                        costs[and_clause.node][1] += AND_no_cost
+                        and_clause.compute_cost(costs)
+
+        else:
+            raise("Invalid GoalTree expr", self.expr)
+
+        return costs
+        
 
 def backchain(rules: [IF], hypothesis: str) -> GoalTree:
     '''
-    - rules: iterable of IF rules, following the 3 restrictions
+    - rules: iterable of IF rules, following the 3 restrictions:
+        1. You will never have to test a hypothesis with unknown variables.
+           All variables that appear in the  antecedent
+           will also appear in the consequent.
+        2. All assertions are positive: no rules will have DELETE parts or NOT clauses.
+Antecedents are not nested. Something like (OR (AND x y) (AND z w)) will not appear 
+in the antecedent parts of rules
     - hypothesis: a string for which the goal tree will be built
     - returns: either the string `hypothesis`, or the goal tree starting with the OR node
     '''
@@ -138,29 +193,65 @@ def test_ZOO_example():
     # and what are their definition rules.
     # My GoalTree data structure solves this issue.
 
-    expected = GoalTree(
-        'opus is a penguin',
-        AND(GoalTree('opus is a bird',
-                     OR('opus has feathers',
-                        AND('opus flies', 'opus lays eggs'))),
-            'opus does not fly', 
-            'opus swims', 
-            'opus has black and white color'))
+    
+    expected = \
+    {"opus is a penguin": {
+        "AND": [
+        {
+            "opus is a bird": {
+                "OR": [
+                    "opus has feathers",
+                    {
+                        "AND": [
+                            "opus flies",
+                            "opus lays eggs"
+                        ]
+                    }
+                 ]
+            }
+        },
+        "opus does not fly",
+        "opus swims",
+        "opus has black and white color"]}}
+
+    '''
+    (0) Opus is a penguin
+      - Opus is a bird (1) and Opus does not fly and Opus swims
+    (1) Opus is a bird
+      - Opus has feathers, or
+      - Opus fies and Opus lays eggs
+    '''
     
     assert backchain(ZOOKEEPER_RULES, 'opus is a penguin') == expected
     
 
 if __name__=='__main__':
-    goal_tree = backchain(ZOOKEEPER_RULES, 'opus is a penguin')
-
-    goal_obj = goal_tree.__str__()
     
-    # from pprint import pp
-    # pp(goal_obj, compact=False)
+    # goal_tree = backchain(ZOOKEEPER_RULES, 'opus is a penguin')
+    # goal_obj = goal_tree.__str__()
+    # import json
+    # print(json.dumps(goal_obj, indent=4))
 
-    import json
-    print(json.dumps(goal_obj, indent=4))
+    costs = None
+    hypotheses = ('X is a penguin',
+                  'X is a ostrich',
+                  'X is a zebra',
+                  'X is a giraffe',
+                  'X is a cheetah',
+                  'X is a tiger',
+                  'X is a albatross')
+    for hypothesis in hypotheses:
+        goal_tree = backchain(ZOOKEEPER_RULES, hypothesis)
+        costs = goal_tree.compute_cost(costs)
+    ic(costs)
 
+
+    avg_costs = dict()
+    middle_score = len(hypotheses) / 2
+    for k, v in costs.items():
+        avg_value = (v[0] - middle_score) ** 2 + (v[1] - middle_score) ** 2
+        avg_costs[k] = avg_value
+    ic(sorted(avg_costs.items(), key = lambda v: v[1]))
     
     
 
