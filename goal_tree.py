@@ -1,5 +1,7 @@
 #!/bin/env python3
 from typing import Optional
+from collections.abc import Iterable
+from copy import deepcopy
 from icecream import ic
 
 '''
@@ -32,6 +34,30 @@ in an expert system we need to be able to represent that a statement is false
 for the optimization of asking questions and deducing facts.
 '''
 
+def or3(ls: Iterable[Optional[bool]]) -> Optional[bool]:
+    '''OR a list of booleans which can also be unknown (represented by None)
+      # or(true, unknown) = true
+      # or(false, unknown) = unknown
+    '''
+    for v in ls:
+        if v:
+            return True
+        if v is None:
+            return None
+    return False
+
+def and3(ls: Iterable[Optional[bool]]) -> Optional[bool]:
+    '''AND a list of booleans which can also be unknown (represented by None)
+      # and(true, unknown) = unknown
+      # and(false, unknown) = false
+    '''
+    for v in ls:
+        if v == False:
+            return False
+        if v is None:
+            return None
+    return True
+
 
 class Goal:
     '''
@@ -55,7 +81,7 @@ class Goal:
     parents: set["Goal"]
     
     # parents: [Goal]
-    def __init__(self, head):
+    def __init__(self, head) -> None:
         self.head = head
         self.body = None
         self.truth = None
@@ -64,15 +90,25 @@ class Goal:
     def __repr__(self):
         return f'Goal<{self.head},{self.body}>'
 
-    def set(self):
-        '''Set the truth value by re-evaluating the children values.'''
-        return
+    def set(self, truth: bool) -> None:
+        '''Set the truth value of node, and update the parents' values.'''
+        self.truth = truth
+        for parent in self.parents:
+            parent._update()
+            
+    def _update(self) -> None:
+        '''Re-evaluate this node's truth from the children's values,
+        and if the value changes, recursively update the parents as well.'''
+        old_truth = self.truth
+        if not self.body:
+            return
+        self.truth = or3(and3(n.truth for n in and_set) for and_set in self.body)
+        
+        if self.truth != old_truth:
+            for parent in self.parents:
+                parent._update()
 
-
-    def _update(self):
-        return
-    
-
+                
 class GoalTree:
     '''
     A GoalTree groups a set of Goal nodes which might be interconnected.
@@ -133,10 +169,6 @@ class GoalTree:
 # updating the values:
 # - bottom-up: starting from the leaves, recursively compute sum of the parents' values
 # - top-down: set all to 0, then starting from the roots, recursively add values to children
-
-# updating the truth:
-# - bottom-up: set() the current truth, then call its parents' update(), which will call their
-# parents' update() if they themselves change their value
         
 
 def test_init_tree():
@@ -158,3 +190,25 @@ def test_init_tree():
     root_heads = [n.head for n in g.roots]
     assert ("albatross" in root_heads and "penguin" in root_heads)
 
+
+
+def test_set_truth():
+    g = GoalTree({"penguin": (("bird", "swims", "doesn't fly"),),
+                  "bird": (("feathers",), ("flies", "lays eggs")),
+                  "albatross": (("bird", "good flyer"),)})
+
+    g2 = deepcopy(g)
+    g2.node_map["feathers"].set(True)
+    assert g2.node_map["feathers"].truth == True
+    assert g2.node_map["bird"].truth == True
+    assert g2.node_map["albatross"].truth == None
+
+    g3 = deepcopy(g)
+    g3.node_map["feathers"].set(False)
+    assert g3.node_map["bird"].truth is None
+    g3.node_map["flies"].set(True)
+    assert g3.node_map["bird"].truth is None
+    g3.node_map["lays eggs"].set(True)
+    assert g3.node_map["bird"].truth == True
+    g3.node_map["good flyer"].set(True)
+        
