@@ -1,7 +1,11 @@
 #!/bin/env python3
-from typing import Optional
-from collections.abc import Iterable
+from typing import Optional, Union
+from collections import defaultdict
+from collections.abc import Sequence, Collection, Iterable
 from copy import deepcopy
+from three_valued_logic import and3, or3
+
+import graphviz
 from icecream import ic
 
 '''
@@ -34,29 +38,6 @@ in an expert system we need to be able to represent that a statement is false
 for the optimization of asking questions and deducing facts.
 '''
 
-def or3(ls: Iterable[Optional[bool]]) -> Optional[bool]:
-    '''OR a list of booleans which can also be unknown (represented by None)
-      # or(true, unknown) = true
-      # or(false, unknown) = unknown
-    '''
-    for v in ls:
-        if v:
-            return True
-        if v is None:
-            return None
-    return False
-
-def and3(ls: Iterable[Optional[bool]]) -> Optional[bool]:
-    '''AND a list of booleans which can also be unknown (represented by None)
-      # and(true, unknown) = unknown
-      # and(false, unknown) = false
-    '''
-    for v in ls:
-        if v == False:
-            return False
-        if v is None:
-            return None
-    return True
 
 
 class Goal:
@@ -67,7 +48,7 @@ class Goal:
     - `head`: a statement of a fact, like "has feathers"
     - `body`: the subproblems that need to be solved for this goal,
       represented as a set (or-set) of sets (and-sets).
-      For leaf nodes, `body` is None.
+      For leaf nodes, `body` has 0 elements.
     - `truth`: a boolean representing whether this fact is true,
       or None if the truthness is unknown.
     
@@ -76,20 +57,26 @@ class Goal:
     If a Goal has no parents, it is a root node in the tree.
     '''
     head: str
-    body: Optional[tuple[tuple["Goal", ...], ...]]
+    body: set[tuple["Goal", ...]]
     truth: Optional[bool]
     parents: set["Goal"]
     
-    # parents: [Goal]
+
     def __init__(self, head) -> None:
         self.head = head
-        self.body = None
+        self.body = set()
         self.truth = None
         self.parents = set()
 
     def __repr__(self):
         return f'Goal<{self.head},{self.body}>'
 
+    def is_leaf(self) -> bool:
+        return len(self.body) == 0
+
+    def is_root(self) -> bool:
+        return len(self.parents) == 0
+        
     def set(self, truth: bool) -> None:
         '''Set the truth value of node, and update the parents' values.'''
         self.truth = truth
@@ -102,11 +89,31 @@ class Goal:
         old_truth = self.truth
         if not self.body:
             return
-        self.truth = or3(and3(n.truth for n in and_set) for and_set in self.body)
-        
+        self.truth = or3([and3([n.truth for n in and_set]) for and_set in self.body])
         if self.truth != old_truth:
             for parent in self.parents:
                 parent._update()
+
+
+    def draw_on_graph(self, graph: graphviz.Digraph) -> None:
+        graph.node(self.head)
+        
+        if not self.is_leaf():
+            graph.node(self.head, style='filled', color='lightgrey')
+            
+        for i, and_set in enumerate(self.body):
+            if len(and_set) == 1:
+                child = and_set[0]
+                child.draw_on_graph(graph)
+                graph.edge(self.head, child.head)
+            else:
+                and_node_label = f'AND_{i}_{self.head}'
+                graph.node(and_node_label, shape="point", width=".1", height='.1')
+                graph.edge(self.head, and_node_label, arrowhead="none")
+                for child in and_set:
+                    child.draw_on_graph(graph)
+                    graph.edge(and_node_label, child.head)
+
 
                 
 class GoalTree:
@@ -116,7 +123,8 @@ class GoalTree:
     and to have a list of pointers to root nodes as well as leaf nodes,
     which is what this class is for.
     '''
-    
+
+    leaves: set[Goal]
     roots: set[Goal]
     # map a goal's statement (node's head) to the Goal instance.
     node_map: dict[str, Goal] = dict()
@@ -125,7 +133,7 @@ class GoalTree:
     # we need to convert all rules into a goal tree in a single function
     # because Goals reference other Goals,
     # so we need to keep a dict, mapping head strings to their respective Goal objects
-    def __init__(self, rules: dict[str, tuple[tuple[str, ...], ...]]):
+    def __init__(self, rules: dict[str, set[tuple[str, ...]]]):
         '''
         - rules: maps every statement to an or-set of and-sets;
             for every statement, one Goal node will be created with all the correct associations;
@@ -150,37 +158,83 @@ class GoalTree:
             or_tup = rules.get(g.head)
             if or_tup is None:
                 continue  # it is a leaf node, with no body
-            body = tuple(tuple(self.node_map[stmt] for stmt in and_tup) for and_tup in or_tup)
+            body = set(tuple(self.node_map[stmt] for stmt in and_tup) for and_tup in or_tup)
             g.body = body
 
         # 4. for each goal with a body, add itself as parent of all its children nodes
         for g in self.node_map.values():
             if g.body is None:
                 continue
-            children_nodes = (n for and_set in g.body for n in and_set)
-            for n in children_nodes:
-                n.parents.add(g)
+            for and_set2 in g.body:
+                for n in and_set2:
+                    n.parents.add(g)
+                    
+        # 5. find all the root nodes (with no parents)
+        # and all leaf nodes (with no children/body)
+        self.roots = {g for g in self.node_map.values() if g.is_root()}
+        self.leaves = {g for g in self.node_map.values() if g.is_leaf()}
 
-        # 5. find all the root nodes (which don't have a parent)
-        self.roots = {g for g in self.node_map.values() if len(g.parents) == 0}
         
+    def leaf_nodes_values(self) -> dict[Goal, float]:
+        '''
+        Computes a value for each leaf node, such that the higher the value,
+        the more evenly a question will split the hypotheses into two halves.
 
+        Procedure:
+        1. set every node's value to 0, except for root nodes, which have a default value
+        2. Go top-down recursively from the root nodes,
+           adding their contribution to their children nodes.
+        3. When finished, return the values of leaf nodes
 
-# updating the values:
-# - bottom-up: starting from the leaves, recursively compute sum of the parents' values
-# - top-down: set all to 0, then starting from the roots, recursively add values to children
+        You could also do this bottom-up, but it would be more complicated.
+        In bottom-up, you have to memoize:
+        1. unknown-count(and-set) and unknown_count(or-set)
+        2. value(node), needed multiple times
+        In top-down, you only have to keep track of each node's accumulator value.
+
+        Actually can't go top-down because before adding values to the children of node X,
+        you need to make sure X's value won't change,
+        but for that you need to make sure all its parents have been processed,
+        which is exactly bottom-up.
+
+        We want to sort nodes:
+        - first, by how many root nodes they influence
+          - the closer it gets to 50%, the better
+          - note: excluding paths in which they make no difference
+        - second, by how close they are to root nodes
+          - for this i can use my value splitting procedure
+        '''
         
+        node_values_map: dict[Goal, tuple[float, float]] = defaultdict(lambda: (0, 0))
+        root_value = 1 / len(self.roots)
 
+        def process_node(node: Goal) -> None:
+            '''Add values to node's children, then process the children recursively.'''
+            
+            return node_value_map
+        return
+
+
+    def draw_on_graph(self, graph: graphviz.Digraph) -> None:
+        '''Draw the GoalTree's nodes in the given graph
+        by drawing all its roots'''
+        for root in self.roots:
+            root.draw_on_graph(graph)
+            graph.node(root.head, style='filled', color='palegreen2')
+
+
+            
+    
 def test_init_tree():
-    g = GoalTree({"penguin": (("bird", "swims", "doesn't fly"),),
-                  "bird": (("feathers",), ("flies", "lays eggs")),
-                  "albatross": (("bird", "good flyer"),)})
+    g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
+                  "bird": {("feathers",), ("flies", "lays eggs")},
+                  "albatross": {("bird", "good flyer")}})
 
     assert g.node_map['penguin']
     assert g.node_map['flies']
 
     # rules
-    assert "swims" in [n.head for n in g.node_map['penguin'].body[0]]
+    assert "swims" in [n.head for n in g.node_map['penguin'].body.pop()]
 
     # parents
     bird_parents = [n.head for n in g.node_map['bird'].parents]
@@ -193,9 +247,10 @@ def test_init_tree():
 
 
 def test_set_truth():
-    g = GoalTree({"penguin": (("bird", "swims", "doesn't fly"),),
-                  "bird": (("feathers",), ("flies", "lays eggs")),
-                  "albatross": (("bird", "good flyer"),)})
+    g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
+                  "bird": {("feathers",), ("flies", "lays eggs")},
+                  "albatross": {("bird", "good flyer")}})
+
 
     g2 = deepcopy(g)
     g2.node_map["feathers"].set(True)
@@ -211,4 +266,23 @@ def test_set_truth():
     g3.node_map["lays eggs"].set(True)
     assert g3.node_map["bird"].truth == True
     g3.node_map["good flyer"].set(True)
-        
+    
+
+
+if __name__ == "__main__":
+    
+    g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
+                  "bird": {("feathers",), ("flies", "lays eggs")},
+                  "albatross": {("bird", "good flyer")}})
+    ic(g.node_map)
+    
+    vals = g.leaf_nodes_values()
+    ic(vals)
+
+
+    graph = graphviz.Digraph(strict=True)
+    graph.attr(rankdir='RL')
+    g.draw_on_graph(graph)
+    graph.render(directory="graphviz-output", format="png")
+
+
