@@ -5,7 +5,6 @@ from collections.abc import Sequence, Collection, Iterable
 from copy import deepcopy
 from three_valued_logic import and3, or3
 
-import graphviz
 from icecream import ic
 
 '''
@@ -95,25 +94,6 @@ class Goal:
                 parent._update()
 
 
-    def draw_on_graph(self, graph: graphviz.Digraph) -> None:
-        graph.node(self.head)
-        
-        if not self.is_leaf():
-            graph.node(self.head, style='filled', color='lightgrey')
-            
-        for i, and_set in enumerate(self.body):
-            if len(and_set) == 1:
-                child = and_set[0]
-                child.draw_on_graph(graph)
-                graph.edge(self.head, child.head)
-            else:
-                and_node_label = f'AND_{i}_{self.head}'
-                graph.node(and_node_label, shape="point", width=".1", height='.1')
-                graph.edge(self.head, and_node_label, arrowhead="none")
-                for child in and_set:
-                    child.draw_on_graph(graph)
-                    graph.edge(and_node_label, child.head)
-
 
                 
 class GoalTree:
@@ -127,7 +107,7 @@ class GoalTree:
     leaves: set[Goal]
     roots: set[Goal]
     # map a goal's statement (node's head) to the Goal instance.
-    node_map: dict[str, Goal] = dict()
+    node_map: dict[str, Goal]
 
     
     # we need to convert all rules into a goal tree in a single function
@@ -139,6 +119,8 @@ class GoalTree:
             for every statement, one Goal node will be created with all the correct associations;
             if a statement doesn't have a rule for it, it's a leaf node.
         '''
+        self.node_map = dict()
+        
         # 1. create all the intermediate nodes (which have a production rule)
         for statement in rules:
             g = Goal(statement)
@@ -214,16 +196,6 @@ class GoalTree:
             return node_value_map
         return
 
-
-    def draw_on_graph(self, graph: graphviz.Digraph) -> None:
-        '''Draw the GoalTree's nodes in the given graph
-        by drawing all its roots'''
-        for root in self.roots:
-            root.draw_on_graph(graph)
-            graph.node(root.head, style='filled', color='palegreen2')
-
-
-            
     
 def test_init_tree():
     g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
@@ -266,23 +238,5 @@ def test_set_truth():
     g3.node_map["lays eggs"].set(True)
     assert g3.node_map["bird"].truth == True
     g3.node_map["good flyer"].set(True)
+
     
-
-
-if __name__ == "__main__":
-    
-    g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
-                  "bird": {("feathers",), ("flies", "lays eggs")},
-                  "albatross": {("bird", "good flyer")}})
-    ic(g.node_map)
-    
-    vals = g.leaf_nodes_values()
-    ic(vals)
-
-
-    graph = graphviz.Digraph(strict=True)
-    graph.attr(rankdir='RL')
-    g.draw_on_graph(graph)
-    graph.render(directory="graphviz-output", format="png")
-
-
