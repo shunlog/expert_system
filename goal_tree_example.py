@@ -8,3 +8,9 @@ if __name__ == "__main__":
                   "albatross": {("bird", "good flyer")}})
     
     render_goal_tree(g)
+
+    import IPython
+    IPython.embed()
+
+
+    

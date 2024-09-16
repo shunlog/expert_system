@@ -1,16 +1,20 @@
 import graphviz
-from goal_tree import Goal, GoalTree
+from .goal_tree import Goal, GoalTree
 
 def draw_node(node: Goal, graph: graphviz.Digraph) -> None:
-    '''Recursively draw the current node,
-    its children, and the links to them
+    '''Draw the current node and the links to its children
     in the given Digraph object.'''
     if not node.is_leaf() and not node.is_root():
-        graph.node(node.head, style='filled', color='lightgrey')
+        graph.node(node.head, color='purple')
     elif node.is_root():
-        graph.node(node.head, style='filled', color='palegreen2')
+        graph.node(node.head, color='darkorange', penwidth='2')
     else:
         graph.node(node.head)
+
+    if node.truth == True:
+        graph.node(node.head, style='filled', fillcolor='palegreen2')
+    elif node.truth == False:
+        graph.node(node.head, style='filled', fillcolor='red')
         
     for i, and_set in enumerate(node.body):
         if len(and_set) == 1:
@@ -22,17 +26,19 @@ def draw_node(node: Goal, graph: graphviz.Digraph) -> None:
             graph.node(and_node_label, shape="point", width=".1", height='.1')
             graph.edge(node.head, and_node_label, arrowhead="none")
             for child in and_set:
-                draw_node(child, graph)
                 graph.edge(and_node_label, child.head)
 
                 
 def draw_tree(tree: GoalTree, graph: graphviz.Digraph) -> None:
-    for root in tree.roots:
-        draw_node(root, graph)
+    for node in tree.node_map.values():
+        draw_node(node, graph)
 
 
-def render_goal_tree(tree: GoalTree):
+def render_goal_tree(tree: GoalTree, dir="out", fn="diagram"):
     graph = graphviz.Digraph(strict=True)
     graph.attr(rankdir='RL')
     draw_tree(tree, graph)
-    graph.render(directory="graphviz-output", format="png")
+    print('Drawing in ', dir, fn)
+    graph.render(directory=dir,
+                 filename=fn,
+                 format="png")

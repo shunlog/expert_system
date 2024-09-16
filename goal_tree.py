@@ -1,9 +1,9 @@
 #!/bin/env python3
-from typing import Optional, Union
+from typing import Optional, Union, Self
 from collections import defaultdict
 from collections.abc import Sequence, Collection, Iterable
 from copy import deepcopy
-from three_valued_logic import and3, or3
+from .three_valued_logic import and3, or3
 
 from icecream import ic
 
@@ -75,7 +75,11 @@ class Goal:
 
     def is_root(self) -> bool:
         return len(self.parents) == 0
-        
+
+    def children(self) -> set["Goal"]:
+        '''Return an set of all the children mentioned in the body.'''
+        return set(node for and_set in self.body for node in and_set)
+    
     def set(self, truth: bool) -> None:
         '''Set the truth value of node, and call _update()'''
         self.truth = truth
@@ -106,27 +110,42 @@ class Goal:
                 return
             self.truth = truth
 
-        # 1. prune children branches
+        # copying the parents into a list because it's gonna change
+        parents = list(self.parents)
 
-        # 2. prune and-sets branches in parents
-    
-        # 3. update the parents
-        for parent in self.parents:
+        # TODO fix this algorithm
+        
+        # 1. prune children branches both from self.body and from child.parents
+        for child in self.children():
+            print(child.parents)
+            child.parents.remove(self)
+        self.body = set()
+        
+        # 2. update the parents
+        for parent in parents:
             parent._update()
+
+        # 3. prune and-sets branches in parents if new value is False
+        if self.truth == False:
+            for parent in parents:
+                parent.body = set(and_set for and_set in parent.body if self not in and_set)
 
             
 class GoalTree:
     '''
     A GoalTree groups a set of Goal nodes which might be interconnected.
-    It is useful to keep a mapping of all the statements to their existing nodes,
-    and to have a list of pointers to root nodes as well as leaf nodes,
-    which is what this class is for.
-    '''
 
+    This class makes it easy to get a node object representing a statement,
+    and it makes it possible to group multiple root nodes.
+    '''
     leaves: set[Goal]
     roots: set[Goal]
-    # map a goal's statement (node's head) to the Goal instance.
+    # map a statement to its respective Goal instance.
     node_map: dict[str, Goal]
+
+    def get_node(self, statement: str) -> Goal:
+        return self.node_map[statement]
+    
 
     # we need to convert all rules into a goal tree in a single function
     # because Goals reference other Goals,
@@ -158,7 +177,7 @@ class GoalTree:
             or_tup = rules.get(g.head)
             if or_tup is None:
                 continue  # it is a leaf node, with no body
-            body = set(tuple(self.node_map[stmt] for stmt in and_tup) for and_tup in or_tup)
+            body = set(tuple(self.get_node(stmt) for stmt in and_tup) for and_tup in or_tup)
             g.body = body
 
         # 4. for each goal with a body, add itself as parent of all its children nodes
@@ -220,14 +239,14 @@ def test_init_tree():
                   "bird": {("feathers",), ("flies", "lays eggs")},
                   "albatross": {("bird", "good flyer")}})
 
-    assert g.node_map['penguin']
-    assert g.node_map['flies']
+    assert g.get_node('penguin')
+    assert g.get_node('flies')
 
     # rules
-    assert "swims" in [n.head for n in g.node_map['penguin'].body.pop()]
+    assert "swims" in [n.head for n in g.get_node('penguin').body.pop()]
 
     # parents
-    bird_parents = [n.head for n in g.node_map['bird'].parents]
+    bird_parents = [n.head for n in g.get_node('bird').parents]
     assert ("albatross" in bird_parents and "penguin" in bird_parents)
 
     # tree roots
@@ -244,18 +263,48 @@ def test_set_truth_bubbles_upward():
                   "albatross": {("bird", "good flyer")}})
 
     g2 = deepcopy(g)
-    g2.node_map["feathers"].set(True)
-    assert g2.node_map["feathers"].truth == True
-    assert g2.node_map["bird"].truth == True
-    assert g2.node_map["albatross"].truth == None
+    g2.get_node("feathers").set(True)
+    assert g2.get_node("feathers").truth == True
+    assert g2.get_node("bird").truth == True
+    assert g2.get_node("albatross").truth == None
 
     g3 = deepcopy(g)
-    g3.node_map["feathers"].set(False)
-    assert g3.node_map["bird"].truth is None
-    g3.node_map["flies"].set(True)
-    assert g3.node_map["bird"].truth is None
-    g3.node_map["lays eggs"].set(True)
-    assert g3.node_map["bird"].truth == True
-    g3.node_map["good flyer"].set(True)
+    g3.get_node("feathers").set(False)
+    assert g3.get_node("bird").truth is None
+    g3.get_node("flies").set(True)
+    assert g3.get_node("bird").truth is None
+    g3.get_node("lays eggs").set(True)
+    assert g3.get_node("bird").truth == True
+    g3.get_node("good flyer").set(True)
+    
+    g4 = deepcopy(g)
+    g4.get_node("feathers").set(False)
+    g4.get_node("lays eggs").set(False)
+    assert g4.get_node("bird").truth == False
 
+    
+
+def test_prune_children():
+    # when a node's value becomes known,
+    # all the links to its children become unnecessary,
+    # so we want to remove them
+    g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
+                  "bird": {("feathers",), ("flies", "lays eggs")},
+                  "albatross": {("bird", "good flyer")}})
+
+    g.get_node("feathers").set(True)
+    assert g.get_node("bird").body == set()
+    assert g.get_node("bird") not in g.get_node("feathers").parents
+    
+    
+
+def test_prune_and_sets():
+    # when a node's value becomes false,
+    # all the and_sets of its parents in which it appears should be pruned
+    g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
+                  "bird": {("feathers",), ("flies", "lays eggs")},
+                  "albatross": {("bird", "good flyer")}})
+
+    g.get_node("flies").set(False)
+    assert g.get_node("lays eggs") not in g.get_node("bird").children()
     
