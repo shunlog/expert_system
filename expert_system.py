@@ -3,12 +3,6 @@ from draw_goal_tree import render_goal_tree
 
 
 if __name__ == "__main__":    
-    g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
-                  "bird": {("feathers",), ("flies", "lays eggs")},
-                  "albatross": {("bird", "good flyer")}})
-    
-
-
     spongebob_tree = GoalTree({
         "Spongebob": {("sponge", "has square pants")},
         "Stanley": {("sponge", "has tall body")},
@@ -19,23 +13,36 @@ if __name__ == "__main__":
         "octopus": {('has tentacles', 'has a big round cranium'),
                     ('has four legs', 'has tentacles')},
         
-        "starfish": {()},
-        "Patrick": {('starfish',)},
-        "Margie": {('starfish',)},
+        "starfish": {('is coral-pink', 'has a cone-shaped head'),
+                     ('is coral-pink', 'has red dots across its body')},
+        "Patrick Star": {('starfish', 'wears only a pair of shorts')},
+        "Margie Star": {('starfish', 'has hair')},
+        "Herb Star": {('starfish', 'has a beard')},
+
+        "crustacean": {('is red', 'has short, pointy legs', 'has large pincers')},
         
-        # "": {()},
-        # "": {()},
-        # "": {()},
-        # "": {()},
-        # "": {()},
-        # "": {()},
-        # "": {()},
-        # "": {()},
-        # "": {()},
-        # "": {()},
-        # "": {()},
-        # "": {()},
-        # "": {()}
+        "crab": {('crustacean', 'has extremely tall eyes')},
+        "Mr. Krabs": {('crab', 'wears a suit')},
+        "Betsy Krabs": {('crab', 'has wrinkles', 'is female')},
+        "Redbeard Krabs": {('crab', 'has an eyepatch', 'has a beard'),
+                           ('crab', 'wears a stripped sailor shirt')},
+
+        "lobster": {('crustacean', 'has antennae')},
+        "Larry the Lobster": {('lobster',)},
+        
+        "plankton": {('is green', 'has short, pointy legs', 'has antennae'),
+                     ('has only one eye',)},
+        "Sheldon J. Plankton": {('plankton', 'is completely naked')},
+        "Granny Plankton": {('plankton', 'has wrinkles'),
+                                ('plankton', 'is female'),
+                                ('plankton', 'has hair')},
+
+
+        "computer": {("has a monitor for its head",),
+                     ('is a computer',)},
+        "Karen Plankton": {('computer', 'has a green line on the monitor')},
+        "Karen 2.0": {('computer', 'has a red line on the monitor'),
+                      ('computer', 'has a slick body')},
     })
 
     render_goal_tree(spongebob_tree)
