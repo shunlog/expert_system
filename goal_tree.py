@@ -77,25 +77,44 @@ class Goal:
         return len(self.parents) == 0
         
     def set(self, truth: bool) -> None:
-        '''Set the truth value of node, and update the parents' values.'''
+        '''Set the truth value of node, and call _update()'''
         self.truth = truth
+        self._update(False)
+
+    def eval_body(self) -> Union[bool, None]:
+        '''Evaluate the truth of this node according to the rules in the body.
+        If this is a leaf node, return None'''
+        if not self.body:
+            return None
+        return or3([and3([n.truth for n in and_set]) for and_set in self.body])
+        
+    def _update(self, re_eval:bool = True) -> None:
+        '''
+        When the truth value of a node becomes known, there are multiple things that need to happen:
+        - re-evaluate the parents' values
+        - prune links to children
+        - if new value is False, prune and-sets which contain the current node in parents
+        
+        This function re-evaluates this node's truth according to its body,
+        and if the value changes, recursively updates the parents as well.
+        If `re_eval` is False, assume the truth has just been changed,
+        so don't evaluate it but simply do all the necessary updates.'''
+        if re_eval:
+            truth = self.eval_body()
+            if truth == self.truth:
+                # value hasn't changed, don't do anything
+                return
+            self.truth = truth
+
+        # 1. prune children branches
+
+        # 2. prune and-sets branches in parents
+    
+        # 3. update the parents
         for parent in self.parents:
             parent._update()
+
             
-    def _update(self) -> None:
-        '''Re-evaluate this node's truth from the children's values,
-        and if the value changes, recursively update the parents as well.'''
-        old_truth = self.truth
-        if not self.body:
-            return
-        self.truth = or3([and3([n.truth for n in and_set]) for and_set in self.body])
-        if self.truth != old_truth:
-            for parent in self.parents:
-                parent._update()
-
-
-
-                
 class GoalTree:
     '''
     A GoalTree groups a set of Goal nodes which might be interconnected.
@@ -109,7 +128,6 @@ class GoalTree:
     # map a goal's statement (node's head) to the Goal instance.
     node_map: dict[str, Goal]
 
-    
     # we need to convert all rules into a goal tree in a single function
     # because Goals reference other Goals,
     # so we need to keep a dict, mapping head strings to their respective Goal objects
@@ -187,14 +205,14 @@ class GoalTree:
           - for this i can use my value splitting procedure
         '''
         
-        node_values_map: dict[Goal, tuple[float, float]] = defaultdict(lambda: (0, 0))
-        root_value = 1 / len(self.roots)
+        # node_values_map: dict[Goal, tuple[float, float]] = defaultdict(lambda: (0, 0))
+        # root_value = 1 / len(self.roots)
 
-        def process_node(node: Goal) -> None:
-            '''Add values to node's children, then process the children recursively.'''
+        # def process_node(node: Goal) -> None:
+        #     '''Add values to node's children, then process the children recursively.'''
+        #     return node_value_map
             
-            return node_value_map
-        return
+        return {}
 
     
 def test_init_tree():
@@ -218,11 +236,12 @@ def test_init_tree():
 
 
 
-def test_set_truth():
+def test_set_truth_bubbles_upward():
+    # test that setting the truth of a node
+    # updates the truth of its parents
     g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
                   "bird": {("feathers",), ("flies", "lays eggs")},
                   "albatross": {("bird", "good flyer")}})
-
 
     g2 = deepcopy(g)
     g2.node_map["feathers"].set(True)
