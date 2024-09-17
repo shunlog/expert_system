@@ -40,7 +40,8 @@ def render_goal_tree(tree: GoalTree, dir="out", fn="diagram"):
     graph = graphviz.Digraph(strict=True)
     graph.attr(rankdir='RL')
     draw_tree(tree, graph)
-    print('Drawing in ', dir, fn)
-    graph.render(directory=dir,
+    
+    path = graph.render(directory=dir,
                  filename=fn,
                  format="png")
+    print(path)

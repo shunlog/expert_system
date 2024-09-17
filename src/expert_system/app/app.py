@@ -1,4 +1,4 @@
-from flask import Flask, request, url_for, render_template, redirect
+from flask import Flask, request, url_for, render_template, redirect, send_file
 
 from ..goal_tree import GoalTree
 from ..draw_goal_tree import render_goal_tree
@@ -18,6 +18,10 @@ def set_fact_truth(fact: str, truth: bool):
     tree.get_node(fact).set(truth)
 
 
+@app.route('/pic')
+def send_diagram_file():
+    return send_file('/tmp/expert_system/diagram.png')
+
 @app.post('/reset')
 def reset_tree_view():
     reset_tree()
@@ -34,7 +38,7 @@ def set_truth_view():
 
 @app.route("/")
 def root_view():
-    render_goal_tree(tree, dir='src/app/static', fn='diagram')
+    render_goal_tree(tree, dir='/tmp/expert_system', fn='diagram')
     facts = [n.head for n in tree.leaves]
     return render_template("playground.html", facts=facts)
 
