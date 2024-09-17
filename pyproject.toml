@@ -1,0 +1,13 @@
+[project]
+name = "expert_system"
+version = "0.0.1"
+authors = [
+  { name="Artiom Balan", email="artiombalan331@gmail.com" },
+]
+description = "An expert system for identifying characters"
+readme = "README.md"
+requires-python = ">=3.8"
+
+[build-system]
+requires = ["flit_core<4"]
+build-backend = "flit_core.buildapi"
