@@ -3,9 +3,9 @@ from typing import Optional, Union, Self
 from collections import defaultdict
 from collections.abc import Sequence, Collection, Iterable
 from copy import deepcopy
-from .three_valued_logic import and3, or3
-
 from icecream import ic
+
+from .three_valued_logic import and3, or3
 
 '''
 This program implements an Expert system that asks the user yes/no questions
@@ -76,6 +76,9 @@ class Goal:
     def is_root(self) -> bool:
         return len(self.parents) == 0
 
+    def is_known(self) -> bool:
+        return self.truth is not None
+    
     def children(self) -> set["Goal"]:
         '''Return an set of all the children mentioned in the body.'''
         return set(node for and_set in self.body for node in and_set)
@@ -109,36 +112,35 @@ class Goal:
             parent._update()
 
                 
-    def is_obsolete(self) -> bool:
+    def is_pruned(self) -> bool:
         '''
-        A node is "obsolete" when we don't care to find out its truth value.
+        A node is "pruned" when we don't care to find out its truth value.
         This is useful for minimizing the number of questions asked.
-        For example, a node can be obsolete if:
+        For example, a node can be pruned if:
         - all its parents' truth values have become known, or
         - it was in a single and-set with a node that has become False,
           so now the entire and-set is false, so this node's value doesn't matter anymore
         
-        A node is obsolete if its truth value is known, or if each of its forward links either:
+        A node is pruned if each of its forward links either:
         1. links to a False and-set, or
-        2. is leading to a parent that is obsolete.
-
-        This doesn't mean we can delete the node or its value, actually we might still need it,
-        I just can't find a better term.
+        2. is leading to a parent that is pruned, or
+        3. is leading to a parent whose truth is known
         '''
-        if self.truth is not None:
-            return True
+        if self.is_known():
+            return False
 
-        def obsolete_parent(parent: Goal) -> bool:
-            a = parent.is_obsolete()
+        def pruned_parent(parent: Goal) -> bool:
+            a = parent.is_pruned()
+            c = parent.is_known()
             def false_and_set(and_set):
                 return any(n.truth == False for n in and_set)
             b = all(false_and_set(and_set) for and_set in parent.body if self in and_set)
-            return a or b
+            return a or b or c
             
         if not self.parents:
             return False
         
-        return all(obsolete_parent(p) for p in self.parents)        
+        return all(pruned_parent(p) for p in self.parents)        
         
     
             
@@ -294,7 +296,7 @@ def test_set_truth_bubbles_upward():
 
     
 
-def test_obsolete_nodes():
+def test_pruned_nodes():
     g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
                   "bird": {("feathers",), ("flies", "lays eggs")},
                   "albatross": {("bird", "good flyer"),
@@ -302,27 +304,29 @@ def test_obsolete_nodes():
 
     # parent's value is known
     g2 = deepcopy(g)
-    assert g2.get_node("penguin").is_obsolete() == False  # test root node
-    assert g2.get_node("flies").is_obsolete() == False
+    assert g2.get_node("penguin").is_pruned() == False  # test root node
+    assert g2.get_node("flies").is_pruned() == False
     g2.get_node("bird").set(True)
-    assert g2.get_node("flies").is_obsolete() == True
+    assert g2.get_node("flies").is_pruned() == True
+    # known nodes are not considered pruned
+    assert g2.get_node("bird").is_pruned() == False
     
-    # link is obsolete because of a False node in the same and-set
+    # link is pruned because of a False node in the same and-set
     g3 = deepcopy(g)
-    assert g3.get_node("flies").is_obsolete() == False
+    assert g3.get_node("flies").is_pruned() == False
     g3.get_node("lays eggs").set(False)
-    assert g3.get_node("flies").is_obsolete() == True
+    assert g3.get_node("flies").is_pruned() == True
 
-    # all links must be obsolete
+    # all links must be pruned
     # in this case, "bird" is in 2 and-sets of parent "albatross"
     # and in one and-set of parent "penguin"
     g4 = deepcopy(g)
     g4.get_node("swims").set(False)
-    assert g4.get_node("bird").is_obsolete() == False
+    assert g4.get_node("bird").is_pruned() == False
     g4.get_node("long beak").set(False)    
-    assert g4.get_node("bird").is_obsolete() == False    
+    assert g4.get_node("bird").is_pruned() == False    
     g4.get_node("good flyer").set(False)    
-    assert g4.get_node("bird").is_obsolete() == True
+    assert g4.get_node("bird").is_pruned() == True
     # test recursion
-    assert g4.get_node("flies").is_obsolete() == True
+    assert g4.get_node("flies").is_pruned() == True
        

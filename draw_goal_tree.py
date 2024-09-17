@@ -4,17 +4,19 @@ from .goal_tree import Goal, GoalTree
 def draw_node(node: Goal, graph: graphviz.Digraph) -> None:
     '''Draw the current node and the links to its children
     in the given Digraph object.'''
-    if not node.is_leaf() and not node.is_root():
-        graph.node(node.head, color='purple')
+
+    if node.is_pruned():
+        graph.node(node.head, style='dotted')
     elif node.is_root():
-        graph.node(node.head, color='darkorange', penwidth='2')
-    else:
+        graph.node(node.head, color='gold', penwidth='2')
+    else:  # normal
         graph.node(node.head)
 
+    # green / red based on truth
     if node.truth == True:
         graph.node(node.head, style='filled', fillcolor='palegreen2')
     elif node.truth == False:
-        graph.node(node.head, style='filled', fillcolor='red')
+        graph.node(node.head, style='filled', fillcolor='lightpink1')
         
     for i, and_set in enumerate(node.body):
         if len(and_set) == 1:
