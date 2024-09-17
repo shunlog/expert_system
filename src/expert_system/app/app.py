@@ -1,7 +1,9 @@
 from flask import Flask, request, url_for, render_template, redirect, send_file
+from copy import deepcopy
 
 from ..goal_tree import GoalTree
 from ..draw_goal_tree import render_goal_tree
+from ..expert_system import spongebob_tree
 
 app = Flask(__name__)
 tree: GoalTree = GoalTree({})
@@ -9,9 +11,11 @@ tree: GoalTree = GoalTree({})
 
 def reset_tree() -> None:
     global tree
-    tree = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
-                     "bird": {("feathers",), ("flies", "lays eggs")},
-                     "albatross": {("bird", "good flyer")}})
+
+    # tree = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
+    #                  "bird": {("feathers",), ("flies", "lays eggs")},
+    #                  "albatross": {("bird", "good flyer")}})
+    tree = deepcopy(spongebob_tree)
 
 
 def set_fact_truth(fact: str, truth: bool):
