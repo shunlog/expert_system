@@ -94,15 +94,10 @@ class Goal:
         
     def _update(self, re_eval:bool = True) -> None:
         '''
-        When the truth value of a node becomes known, there are multiple things that need to happen:
-        - re-evaluate the parents' values
-        - prune links to children
-        - if new value is False, prune and-sets which contain the current node in parents
-        
-        This function re-evaluates this node's truth according to its body,
-        and if the value changes, recursively updates the parents as well.
+        When the truth value of a node becomes known,
+        we need to re-evaluate the parents' values.
         If `re_eval` is False, assume the truth has just been changed,
-        so don't evaluate it but simply do all the necessary updates.'''
+        otherwise, evaluate the truth of this node as well.'''
         if re_eval:
             truth = self.eval_body()
             if truth == self.truth:
@@ -110,26 +105,42 @@ class Goal:
                 return
             self.truth = truth
 
-        # copying the parents into a list because it's gonna change
-        parents = list(self.parents)
-
-        # TODO fix this algorithm
-        
-        # 1. prune children branches both from self.body and from child.parents
-        for child in self.children():
-            print(child.parents)
-            child.parents.remove(self)
-        self.body = set()
-        
-        # 2. update the parents
-        for parent in parents:
+        for parent in self.parents:
             parent._update()
 
-        # 3. prune and-sets branches in parents if new value is False
-        if self.truth == False:
-            for parent in parents:
-                parent.body = set(and_set for and_set in parent.body if self not in and_set)
+                
+    def is_obsolete(self) -> bool:
+        '''
+        A node is "obsolete" when we don't care to find out its truth value.
+        This is useful for minimizing the number of questions asked.
+        For example, a node can be obsolete if:
+        - all its parents' truth values have become known, or
+        - it was in a single and-set with a node that has become False,
+          so now the entire and-set is false, so this node's value doesn't matter anymore
+        
+        A node is obsolete if its truth value is known, or if each of its forward links either:
+        1. links to a False and-set, or
+        2. is leading to a parent that is obsolete.
 
+        This doesn't mean we can delete the node or its value, actually we might still need it,
+        I just can't find a better term.
+        '''
+        if self.truth is not None:
+            return True
+
+        def obsolete_parent(parent: Goal) -> bool:
+            a = parent.is_obsolete()
+            def false_and_set(and_set):
+                return any(n.truth == False for n in and_set)
+            b = all(false_and_set(and_set) for and_set in parent.body if self in and_set)
+            return a or b
+            
+        if not self.parents:
+            return False
+        
+        return all(obsolete_parent(p) for p in self.parents)        
+        
+    
             
 class GoalTree:
     '''
@@ -241,14 +252,11 @@ def test_init_tree():
 
     assert g.get_node('penguin')
     assert g.get_node('flies')
-
     # rules
     assert "swims" in [n.head for n in g.get_node('penguin').body.pop()]
-
     # parents
     bird_parents = [n.head for n in g.get_node('bird').parents]
     assert ("albatross" in bird_parents and "penguin" in bird_parents)
-
     # tree roots
     root_heads = [n.head for n in g.roots]
     assert ("albatross" in root_heads and "penguin" in root_heads)
@@ -270,7 +278,9 @@ def test_set_truth_bubbles_upward():
 
     g3 = deepcopy(g)
     g3.get_node("feathers").set(False)
+    # Or(False, None) = None
     assert g3.get_node("bird").truth is None
+    # And(True, None) = None
     g3.get_node("flies").set(True)
     assert g3.get_node("bird").truth is None
     g3.get_node("lays eggs").set(True)
@@ -284,27 +294,35 @@ def test_set_truth_bubbles_upward():
 
     
 
-def test_prune_children():
-    # when a node's value becomes known,
-    # all the links to its children become unnecessary,
-    # so we want to remove them
+def test_obsolete_nodes():
     g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
                   "bird": {("feathers",), ("flies", "lays eggs")},
-                  "albatross": {("bird", "good flyer")}})
+                  "albatross": {("bird", "good flyer"),
+                                ("bird", "long beak")}})
 
-    g.get_node("feathers").set(True)
-    assert g.get_node("bird").body == set()
-    assert g.get_node("bird") not in g.get_node("feathers").parents
+    # parent's value is known
+    g2 = deepcopy(g)
+    assert g2.get_node("penguin").is_obsolete() == False  # test root node
+    assert g2.get_node("flies").is_obsolete() == False
+    g2.get_node("bird").set(True)
+    assert g2.get_node("flies").is_obsolete() == True
     
-    
+    # link is obsolete because of a False node in the same and-set
+    g3 = deepcopy(g)
+    assert g3.get_node("flies").is_obsolete() == False
+    g3.get_node("lays eggs").set(False)
+    assert g3.get_node("flies").is_obsolete() == True
 
-def test_prune_and_sets():
-    # when a node's value becomes false,
-    # all the and_sets of its parents in which it appears should be pruned
-    g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
-                  "bird": {("feathers",), ("flies", "lays eggs")},
-                  "albatross": {("bird", "good flyer")}})
-
-    g.get_node("flies").set(False)
-    assert g.get_node("lays eggs") not in g.get_node("bird").children()
-    
+    # all links must be obsolete
+    # in this case, "bird" is in 2 and-sets of parent "albatross"
+    # and in one and-set of parent "penguin"
+    g4 = deepcopy(g)
+    g4.get_node("swims").set(False)
+    assert g4.get_node("bird").is_obsolete() == False
+    g4.get_node("long beak").set(False)    
+    assert g4.get_node("bird").is_obsolete() == False    
+    g4.get_node("good flyer").set(False)    
+    assert g4.get_node("bird").is_obsolete() == True
+    # test recursion
+    assert g4.get_node("flies").is_obsolete() == True
+       
