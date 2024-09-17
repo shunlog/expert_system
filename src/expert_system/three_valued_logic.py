@@ -15,9 +15,12 @@ Examples:
 def or3(ls: Collection[Union[bool, None]]) -> Union[bool, None]:
     if ls is iter(ls):
         raise Exception("You gave me an iterator instead of a Collection!")
-    if any(ls): return True
-    if all(i == False for i in ls): return False
+    if any(ls):
+        return True
+    if all(i == False for i in ls):
+        return False
     return None
+
 
 def test_or3() -> None:
     assert or3([None, False, True]) == True
@@ -34,9 +37,12 @@ def test_or3() -> None:
 def and3(ls: Collection[Union[bool, None]]) -> Union[bool, None]:
     if ls is iter(ls):
         raise Exception("You gave me an iterator instead of a Collection!")
-    if any(v == False for v in ls): return False
-    if all(i for i in ls): return True
+    if any(v == False for v in ls):
+        return False
+    if all(i for i in ls):
+        return True
     return None
+
 
 def test_and3() -> None:
     assert and3([None, True, False]) == False

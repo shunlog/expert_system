@@ -10,10 +10,10 @@ tree: GoalTree = GoalTree({})
 def reset_tree() -> None:
     global tree
     tree = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
-                  "bird": {("feathers",), ("flies", "lays eggs")},
-                  "albatross": {("bird", "good flyer")}})
+                     "bird": {("feathers",), ("flies", "lays eggs")},
+                     "albatross": {("bird", "good flyer")}})
 
-    
+
 def set_fact_truth(fact: str, truth: bool):
     tree.get_node(fact).set(truth)
 
@@ -21,6 +21,7 @@ def set_fact_truth(fact: str, truth: bool):
 @app.route('/pic')
 def send_diagram_file():
     return send_file('/tmp/expert_system/diagram.png')
+
 
 @app.post('/reset')
 def reset_tree_view():
@@ -46,4 +47,3 @@ def root_view():
 if __name__ == '__main__':
     reset_tree()
     app.run(debug=True)
- 

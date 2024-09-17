@@ -38,7 +38,6 @@ for the optimization of asking questions and deducing facts.
 '''
 
 
-
 class Goal:
     '''
     A Goal represents a node in a Goal tree (a.k.a. and-or tree).
@@ -50,7 +49,7 @@ class Goal:
       For leaf nodes, `body` has 0 elements.
     - `truth`: a boolean representing whether this fact is true,
       or None if the truthness is unknown.
-    
+
     Every Goal stores references both to the Goal instances from its `body`,
     as well as to its parent Goal nodes from its `parents` field.
     If a Goal has no parents, it is a root node in the tree.
@@ -59,7 +58,6 @@ class Goal:
     body: set[tuple["Goal", ...]]
     truth: Optional[bool]
     parents: set["Goal"]
-    
 
     def __init__(self, head) -> None:
         self.head = head
@@ -78,11 +76,11 @@ class Goal:
 
     def is_known(self) -> bool:
         return self.truth is not None
-    
+
     def children(self) -> set["Goal"]:
         '''Return an set of all the children mentioned in the body.'''
         return set(node for and_set in self.body for node in and_set)
-    
+
     def set(self, truth: bool) -> None:
         '''Set the truth value of node, and call _update()'''
         self.truth = truth
@@ -94,8 +92,8 @@ class Goal:
         if not self.body:
             return None
         return or3([and3([n.truth for n in and_set]) for and_set in self.body])
-        
-    def _update(self, re_eval:bool = True) -> None:
+
+    def _update(self, re_eval: bool = True) -> None:
         '''
         When the truth value of a node becomes known,
         we need to re-evaluate the parents' values.
@@ -111,7 +109,6 @@ class Goal:
         for parent in self.parents:
             parent._update()
 
-                
     def is_pruned(self) -> bool:
         '''
         A node is "pruned" when we don't care to find out its truth value.
@@ -120,7 +117,7 @@ class Goal:
         - all its parents' truth values have become known, or
         - it was in a single and-set with a node that has become False,
           so now the entire and-set is false, so this node's value doesn't matter anymore
-        
+
         A node is pruned if each of its forward links either:
         1. links to a False and-set, or
         2. is leading to a parent that is pruned, or
@@ -132,18 +129,19 @@ class Goal:
         def pruned_parent(parent: Goal) -> bool:
             a = parent.is_pruned()
             c = parent.is_known()
+
             def false_and_set(and_set):
                 return any(n.truth == False for n in and_set)
-            b = all(false_and_set(and_set) for and_set in parent.body if self in and_set)
+            b = all(false_and_set(and_set)
+                    for and_set in parent.body if self in and_set)
             return a or b or c
-            
+
         if not self.parents:
             return False
-        
-        return all(pruned_parent(p) for p in self.parents)        
-        
-    
-            
+
+        return all(pruned_parent(p) for p in self.parents)
+
+
 class GoalTree:
     '''
     A GoalTree groups a set of Goal nodes which might be interconnected.
@@ -158,11 +156,11 @@ class GoalTree:
 
     def get_node(self, statement: str) -> Goal:
         return self.node_map[statement]
-    
 
     # we need to convert all rules into a goal tree in a single function
     # because Goals reference other Goals,
     # so we need to keep a dict, mapping head strings to their respective Goal objects
+
     def __init__(self, rules: dict[str, set[tuple[str, ...]]]):
         '''
         - rules: maps every statement to an or-set of and-sets;
@@ -170,7 +168,7 @@ class GoalTree:
             if a statement doesn't have a rule for it, it's a leaf node.
         '''
         self.node_map = dict()
-        
+
         # 1. create all the intermediate nodes (which have a production rule)
         for statement in rules:
             g = Goal(statement)
@@ -184,13 +182,14 @@ class GoalTree:
                         continue
                     g = Goal(statement)
                     self.node_map[statement] = g
-                    
+
         # 3. for each Goal, add the body with references to other goals
         for g in self.node_map.values():
             or_tup = rules.get(g.head)
             if or_tup is None:
                 continue  # it is a leaf node, with no body
-            body = set(tuple(self.get_node(stmt) for stmt in and_tup) for and_tup in or_tup)
+            body = set(tuple(self.get_node(stmt) for stmt in and_tup)
+                       for and_tup in or_tup)
             g.body = body
 
         # 4. for each goal with a body, add itself as parent of all its children nodes
@@ -200,13 +199,12 @@ class GoalTree:
             for and_set2 in g.body:
                 for n in and_set2:
                     n.parents.add(g)
-                    
+
         # 5. find all the root nodes (with no parents)
         # and all leaf nodes (with no children/body)
         self.roots = {g for g in self.node_map.values() if g.is_root()}
         self.leaves = {g for g in self.node_map.values() if g.is_leaf()}
 
-        
     def leaf_nodes_values(self) -> dict[Goal, float]:
         '''
         Computes a value for each leaf node, such that the higher the value,
@@ -236,17 +234,17 @@ class GoalTree:
         - second, by how close they are to root nodes
           - for this i can use my value splitting procedure
         '''
-        
+
         # node_values_map: dict[Goal, tuple[float, float]] = defaultdict(lambda: (0, 0))
         # root_value = 1 / len(self.roots)
 
         # def process_node(node: Goal) -> None:
         #     '''Add values to node's children, then process the children recursively.'''
         #     return node_value_map
-            
+
         return {}
 
-    
+
 def test_init_tree():
     g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
                   "bird": {("feathers",), ("flies", "lays eggs")},
@@ -262,7 +260,6 @@ def test_init_tree():
     # tree roots
     root_heads = [n.head for n in g.roots]
     assert ("albatross" in root_heads and "penguin" in root_heads)
-
 
 
 def test_set_truth_bubbles_upward():
@@ -288,13 +285,12 @@ def test_set_truth_bubbles_upward():
     g3.get_node("lays eggs").set(True)
     assert g3.get_node("bird").truth == True
     g3.get_node("good flyer").set(True)
-    
+
     g4 = deepcopy(g)
     g4.get_node("feathers").set(False)
     g4.get_node("lays eggs").set(False)
     assert g4.get_node("bird").truth == False
 
-    
 
 def test_pruned_nodes():
     g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
@@ -310,7 +306,7 @@ def test_pruned_nodes():
     assert g2.get_node("flies").is_pruned() == True
     # known nodes are not considered pruned
     assert g2.get_node("bird").is_pruned() == False
-    
+
     # link is pruned because of a False node in the same and-set
     g3 = deepcopy(g)
     assert g3.get_node("flies").is_pruned() == False
@@ -323,10 +319,9 @@ def test_pruned_nodes():
     g4 = deepcopy(g)
     g4.get_node("swims").set(False)
     assert g4.get_node("bird").is_pruned() == False
-    g4.get_node("long beak").set(False)    
-    assert g4.get_node("bird").is_pruned() == False    
-    g4.get_node("good flyer").set(False)    
+    g4.get_node("long beak").set(False)
+    assert g4.get_node("bird").is_pruned() == False
+    g4.get_node("good flyer").set(False)
     assert g4.get_node("bird").is_pruned() == True
     # test recursion
     assert g4.get_node("flies").is_pruned() == True
-       

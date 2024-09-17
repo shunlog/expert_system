@@ -2,9 +2,9 @@ from .goal_tree import GoalTree
 from .draw_goal_tree import render_goal_tree
 
 
-if __name__ == "__main__":    
+if __name__ == "__main__":
     spongebob_tree = GoalTree({
-        "Spongebob": {("sponge", "has square pants", 'wears a suit'),},
+        "Spongebob": {("sponge", "has square pants", 'wears a suit'), },
         "Stanley": {("sponge", "has tall body", 'wears a suit')},
         "sponge": {("has a square head", "is yellow", "has holes")},
 
@@ -12,7 +12,7 @@ if __name__ == "__main__":
         "Squilliam": {('octopus', 'has a thick monobrow')},
         "octopus": {('has tentacles', 'has a narrow face but a wide forehead and mouth'),
                     ('has four legs', 'has tentacles')},
-        
+
         "starfish": {('is coral-pink', 'has a cone-shaped head'),
                      ('is coral-pink', 'has red dots across its body')},
         "Patrick Star": {('starfish', 'wears only a pair of shorts')},
@@ -20,7 +20,7 @@ if __name__ == "__main__":
         "Herb Star": {('starfish', 'has a beard')},
 
         "crustacean": {('is red', 'has short, pointy legs', 'has large pincers')},
-        
+
         "crab": {('crustacean', 'has extremely tall eyes')},
         "Mr. Krabs": {('crab', 'wears a suit')},
         "Betsy Krabs": {('crab', 'has wrinkles', 'is female')},
@@ -29,13 +29,13 @@ if __name__ == "__main__":
 
         "lobster": {('crustacean', 'has antennae')},
         "Larry the Lobster": {('lobster',)},
-        
+
         "plankton": {('is green', 'has short, pointy legs', 'has antennae'),
                      ('has only one eye',)},
         "Sheldon J. Plankton": {('plankton', 'is completely naked')},
         "Granny Plankton": {('plankton', 'has wrinkles'),
-                                ('plankton', 'is female'),
-                                ('plankton', 'has hair')},
+                            ('plankton', 'is female'),
+                            ('plankton', 'has hair')},
 
 
         "computer": {("has a monitor for its head",),
