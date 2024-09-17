@@ -1,5 +1,5 @@
-from goal_tree import GoalTree
-from draw_goal_tree import render_goal_tree
+from .goal_tree import GoalTree
+from .draw_goal_tree import render_goal_tree
 
 
 if __name__ == "__main__":    
@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
         "Squidward": {('octopus', 'wears a brown t-shirt')},
         "Squilliam": {('octopus', 'has a thick monobrow')},
-        "octopus": {('has tentacles', 'has a big round cranium'),
+        "octopus": {('has tentacles', 'has a narrow face but a wide forehead and mouth'),
                     ('has four legs', 'has tentacles')},
         
         "starfish": {('is coral-pink', 'has a cone-shaped head'),
