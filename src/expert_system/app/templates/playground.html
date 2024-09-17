@@ -1,11 +1,11 @@
 <!doctype html>
 
-<form action="/reset" method="POST">
+<form action="{{ url_for('reset_tree_view') }}" method="POST">
   <button>Reset tree</button>
 </form>
 
 {% for fact in facts %}
-<form action="/answer" method="POST">
+<form action="{{url_for('set_truth_view')}}" method="POST">
   <label>{{fact}}</label>
   <input type="hidden" name="fact" value="{{fact}}">
   <button type="submit" name="truth" value="true">Yes</button>
