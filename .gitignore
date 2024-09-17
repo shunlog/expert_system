@@ -1,5 +1,5 @@
 # this is where the web app stores the diagrams
-app/static
+**/app/static
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
