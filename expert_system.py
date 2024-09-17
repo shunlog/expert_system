@@ -4,8 +4,8 @@ from draw_goal_tree import render_goal_tree
 
 if __name__ == "__main__":    
     spongebob_tree = GoalTree({
-        "Spongebob": {("sponge", "has square pants")},
-        "Stanley": {("sponge", "has tall body")},
+        "Spongebob": {("sponge", "has square pants", 'wears a suit'),},
+        "Stanley": {("sponge", "has tall body", 'wears a suit')},
         "sponge": {("has a square head", "is yellow", "has holes")},
 
         "Squidward": {('octopus', 'wears a brown t-shirt')},
