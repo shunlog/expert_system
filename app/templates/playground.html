@@ -1,0 +1,16 @@
+<!doctype html>
+
+<form action="/reset" method="POST">
+  <button>Reset tree</button>
+</form>
+
+{% for fact in facts %}
+<form action="/answer" method="POST">
+  <label>{{fact}}</label>
+  <input type="hidden" name="fact" value="{{fact}}">
+  <button type="submit" name="truth" value="true">Yes</button>
+  <button type="submit" name="truth" value="false">No</button>
+</form>
+{% endfor %}
+
+<img src="{{url_for('static', filename='diagram.png')}}">
