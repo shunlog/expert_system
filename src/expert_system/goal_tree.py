@@ -205,12 +205,12 @@ class GoalTree:
         self.roots = {g for g in self.node_map.values() if g.is_root()}
         self.leaves = {g for g in self.node_map.values() if g.is_leaf()}
 
-    def node_value_parts(self, fact: str) -> tuple[Optional[Goal], Optional[Goal], float, float]:
+    def node_value_parts(self, fact: str) -> tuple[bool, bool, float, float]:
         '''
         Computes the parameters that define the questioning value of a leaf node.
         Return values:
-        1. GoalT - Goal that becomes true
-        2. GoalLast - Goal that remains (all others become false)
+        1. GoalT - true if done when answered True
+        2. GoalF - true if done when answered False
         3. ValueH - the fraction of hypotheses proven False when the answer is F.
            In the range [0, 1], the bigger the better.
         4. ValueL - the average fraction of pruned leaves when the answer is T and when it is F.
@@ -218,7 +218,6 @@ class GoalTree:
 
         It's not clear what parameters to prioritize, or whether this strategy is good at all.
         '''
-
         def pruned_cnt(tree: GoalTree) -> int:
             return sum(1 for l in tree.leaves if l.is_pruned())
 
@@ -232,42 +231,45 @@ class GoalTree:
         # if the answer is True
         tree_T = deepcopy(self)
         tree_T.get_node(fact).set(True)
-        pruned_T = pruned_cnt(tree_T)
-        true_roots = [root for root in tree_T.roots if root.truth]
-        assert len(true_roots) <= 1
-        goalT = true_roots[0] if true_roots else None
+        pruned_T = pruned_cnt(tree_T) - pruned_initially
+        goalT = tree_T.check_result() is not None
 
         # if the answer is False
         tree_F = deepcopy(self)
         tree_F.get_node(fact).set(False)
-        pruned_F = pruned_cnt(tree_F)
+        pruned_F = pruned_cnt(tree_F) - pruned_initially
         false_hypoth = false_hypoth_cnt(tree_F)
-        false_roots = [root for root in tree_F.roots if root.truth == False]
-        if len(false_roots) + 1 == len(tree_F.roots):
-            goalLast = next(
-                root for root in tree_F.roots if root.truth == None)
-        else:
-            goalLast = None
+        goalF = tree_F.check_result() is not None
 
         valH = (false_hypoth - false_initially) / len(self.roots)
-        valL = (pruned_T - pruned_initially + pruned_F -
-                pruned_initially) / 2 / len(self.leaves)
-        return (goalT, goalLast, valH, valL)
+        valL = (pruned_T + pruned_F) / 2 / len(self.leaves)
+        return (goalT, goalF, valH, valL)
 
     def node_value(self, fact: str) -> Union[Goal, float]:
-        '''Computes the node questioning value by combining the parts.'''
-        goalT, goalLast, valH, valL = self.node_value_parts(fact)
-        if goalT or goalLast:
+        '''Computes the node questioning value by combining the parts.
+        Prioritize questions that lead to being done.'''
+        goalT, goalF, valH, valL = self.node_value_parts(fact)
+        if goalT and goalF:
+            # unlikely, but still worth prioritizing
+            return 1000
+        elif goalT or goalF:
             return 999
 
         return valH + valL
 
-    def true_hypothesis(self) -> Optional[Goal]:
+    def check_result(self) -> Optional[Goal]:
+        '''
+        Check if a hypothesis was found to be true,
+        or if there is only one remaining, meaning it has to be the one.
+        Also assert that there is always one and only one answer.
+        '''
         true_roots = [r for r in self.roots if r.truth]
         assert len(true_roots) < 2
         if true_roots:
             return true_roots[0]
+
         unknown_roots = [r for r in self.roots if r.truth is None]
+        assert len(unknown_roots) != 0  # can't have all be False
         if len(unknown_roots) == 1:
             return unknown_roots[0]
         return None

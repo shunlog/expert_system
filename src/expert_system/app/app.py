@@ -45,7 +45,7 @@ def set_truth_view():
 def root_view():
     render_goal_tree(tree, dir='/tmp/expert_system', fn='diagram')
 
-    if node := tree.true_hypothesis():
+    if node := tree.check_result():
         return render_template("playground.html", true_hypothesis=node.head)
 
     facts = []

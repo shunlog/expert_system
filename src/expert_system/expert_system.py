@@ -17,7 +17,7 @@ spongebob_tree = GoalTree({
     "Margie Star": {('starfish', 'has hair')},
     "Herb Star": {('starfish', 'has a beard')},
 
-    "crustacean": {('is red', 'has short, pointy legs', 'has large pincers')},
+    "crustacean": {('is red', 'has short, thin legs', 'has large pincers')},
 
     "crab": {('crustacean', 'has extremely tall eyes')},
     "Mr. Krabs": {('crab', 'wears a suit')},
@@ -28,7 +28,7 @@ spongebob_tree = GoalTree({
     "lobster": {('crustacean', 'has antennae')},
     "Larry the Lobster": {('lobster',)},
 
-    "plankton": {('is green', 'has short, pointy legs', 'has antennae'),
+    "plankton": {('is green', 'has short, thin legs', 'has antennae'),
                  ('has only one eye',)},
     "Sheldon J. Plankton": {('plankton', 'is completely naked')},
     "Granny Plankton": {('plankton', 'has wrinkles'),
