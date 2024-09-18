@@ -35,9 +35,7 @@ spongebob_tree = GoalTree({
                         ('plankton', 'is female'),
                         ('plankton', 'has hair')},
 
-
-    "computer": {("has a monitor for its head",),
-                 ('is a computer',)},
+    "computer": {("has a square head", "is not organic"), },
     "Karen Plankton": {('computer', 'has a green line on the monitor')},
     "Karen 2.0": {('computer', 'has a red line on the monitor'),
                   ('computer', 'has a slick body')},

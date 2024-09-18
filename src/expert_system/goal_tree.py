@@ -205,44 +205,72 @@ class GoalTree:
         self.roots = {g for g in self.node_map.values() if g.is_root()}
         self.leaves = {g for g in self.node_map.values() if g.is_leaf()}
 
-    def leaf_nodes_values(self) -> dict[Goal, float]:
+    def node_value_parts(self, fact: str) -> tuple[Optional[Goal], Optional[Goal], float, float]:
         '''
-        Computes a value for each leaf node, such that the higher the value,
-        the more evenly a question will split the hypotheses into two halves.
+        Computes the parameters that define the questioning value of a leaf node.
+        Return values:
+        1. GoalT - Goal that becomes true
+        2. GoalLast - Goal that remains (all others become false)
+        3. ValueH - the fraction of hypotheses proven False when the answer is F.
+           In the range [0, 1], the bigger the better.
+        4. ValueL - the average fraction of pruned leaves when the answer is T and when it is F.
+           In the range [0, 1], the bigger the better.
 
-        Procedure:
-        1. set every node's value to 0, except for root nodes, which have a default value
-        2. Go top-down recursively from the root nodes,
-           adding their contribution to their children nodes.
-        3. When finished, return the values of leaf nodes
-
-        You could also do this bottom-up, but it would be more complicated.
-        In bottom-up, you have to memoize:
-        1. unknown-count(and-set) and unknown_count(or-set)
-        2. value(node), needed multiple times
-        In top-down, you only have to keep track of each node's accumulator value.
-
-        Actually can't go top-down because before adding values to the children of node X,
-        you need to make sure X's value won't change,
-        but for that you need to make sure all its parents have been processed,
-        which is exactly bottom-up.
-
-        We want to sort nodes:
-        - first, by how many root nodes they influence
-          - the closer it gets to 50%, the better
-          - note: excluding paths in which they make no difference
-        - second, by how close they are to root nodes
-          - for this i can use my value splitting procedure
+        It's not clear what parameters to prioritize, or whether this strategy is good at all.
         '''
 
-        # node_values_map: dict[Goal, tuple[float, float]] = defaultdict(lambda: (0, 0))
-        # root_value = 1 / len(self.roots)
+        def pruned_cnt(tree: GoalTree) -> int:
+            return sum(1 for l in tree.leaves if l.is_pruned())
 
-        # def process_node(node: Goal) -> None:
-        #     '''Add values to node's children, then process the children recursively.'''
-        #     return node_value_map
+        def false_hypoth_cnt(tree: GoalTree) -> int:
+            return sum(1 for n in tree.roots if n.truth == False)
 
-        return {}
+        # initial state
+        pruned_initially = pruned_cnt(self)
+        false_initially = false_hypoth_cnt(self)
+
+        # if the answer is True
+        tree_T = deepcopy(self)
+        tree_T.get_node(fact).set(True)
+        pruned_T = pruned_cnt(tree_T)
+        true_roots = [root for root in tree_T.roots if root.truth]
+        assert len(true_roots) <= 1
+        goalT = true_roots[0] if true_roots else None
+
+        # if the answer is False
+        tree_F = deepcopy(self)
+        tree_F.get_node(fact).set(False)
+        pruned_F = pruned_cnt(tree_F)
+        false_hypoth = false_hypoth_cnt(tree_F)
+        false_roots = [root for root in tree_F.roots if root.truth == False]
+        if len(false_roots) + 1 == len(tree_F.roots):
+            goalLast = next(
+                root for root in tree_F.roots if root.truth == None)
+        else:
+            goalLast = None
+
+        valH = (false_hypoth - false_initially) / len(self.roots)
+        valL = (pruned_T - pruned_initially + pruned_F -
+                pruned_initially) / 2 / len(self.leaves)
+        return (goalT, goalLast, valH, valL)
+
+    def node_value(self, fact: str) -> Union[Goal, float]:
+        '''Computes the node questioning value by combining the parts.'''
+        goalT, goalLast, valH, valL = self.node_value_parts(fact)
+        if goalT or goalLast:
+            return 999
+
+        return valH + valL
+
+    def true_hypothesis(self) -> Optional[Goal]:
+        true_roots = [r for r in self.roots if r.truth]
+        assert len(true_roots) < 2
+        if true_roots:
+            return true_roots[0]
+        unknown_roots = [r for r in self.roots if r.truth is None]
+        if len(unknown_roots) == 1:
+            return unknown_roots[0]
+        return None
 
 
 def test_init_tree():
@@ -325,3 +353,24 @@ def test_pruned_nodes():
     assert g4.get_node("bird").is_pruned() == True
     # test recursion
     assert g4.get_node("flies").is_pruned() == True
+
+
+def test_leaf_value():
+    g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
+                  "bird": {("feathers",), ("flies", "lays eggs")},
+                  "albatross": {("bird", "good flyer"),
+                                ("bird", "long beak")}})
+
+    assert g.node_value_parts("flies") == (0, (0 + 1/7)/2)
+    assert g.node_value_parts("long beak") == (0, (0 + 0)/2)
+    assert g.node_value_parts("feathers") == (0, (2/7 + 0)/2)
+
+    # accounts for existing pruned leaves
+    g2 = deepcopy(g)
+    g2.get_node("flies").set(True)
+    assert g2.node_value_parts("feathers") == (0, (1/7 + 0)/2)
+
+    # false hypothesis
+    g3 = deepcopy(g)
+    g3.get_node("bird").set(True)
+    assert g3.node_value_parts("swims") == (1/2, (0 + 1/7)/2)

@@ -44,7 +44,21 @@ def set_truth_view():
 @app.route("/")
 def root_view():
     render_goal_tree(tree, dir='/tmp/expert_system', fn='diagram')
-    facts = [n.head for n in tree.leaves]
+
+    if node := tree.true_hypothesis():
+        return render_template("playground.html", true_hypothesis=node.head)
+
+    facts = []
+    for node in tree.leaves:
+        if node.is_known() or node.is_pruned():
+            continue
+        fact = node.head
+        goalT, goalLast, valH, valL = tree.node_value_parts(fact)
+        val = tree.node_value(fact)
+        val = round(val, 2) if isinstance(val, float) else val
+        facts.append((fact, val, goalT, goalLast,
+                      round(valH, 2), round(valL, 2)))
+    facts = sorted(facts, key=lambda i: i[1], reverse=True)
     return render_template("playground.html", facts=facts)
 
 
