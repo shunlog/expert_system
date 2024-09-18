@@ -1,46 +1,73 @@
 <!doctype html>
 
-<form action="{{ url_for('reset_tree_view') }}" method="POST">
-  <button>Reset tree</button>
-</form>
+<style>
+  body, html {
+      margin: 0;
+      height: 100%;
+      width: 100%;
+      display: flex;
+  }
 
-<table border="1">
-  <thead>
-    <tr>
-      <th>Fact</th>
-      <th>Value</th>
-      <th>Goal turns true</th>
-      <th>Last goal if False</th>
-      <th>Ratio of roots turns false</th>
-      <th>Ratio of facts is pruned</th>
-      <th>Answer</th>
-    </tr>
-  </thead>
-  <tbody>
+  .left, .right {
+      flex: 1;
+      overflow-y: auto;
+  }
 
-    <p>{{ true_hypothesis }}</p>
-    
-    {% for fact, val, goalT, goalLast, valH, valL in facts %}
-    <tr>
-      <td>{{ fact }}</td>
-      <td>{{ val }}</td>
-      <td>{{ goalT }}</td>
-      <td>{{ goalLast }}</td>
-      <td>{{ valH }}</td>
-      <td>{{ valL }}</td>
+  .right {
+      display: flex;
+      overflow-x: auto;
+  }
 
-      <td>
-        <form action="{{url_for('set_truth_view')}}" method="POST">
-          <input type="hidden" name="fact" value="{{fact}}">
-          <button type="submit" name="truth" value="true">Yes</button>
-          <button type="submit" name="truth" value="false">No</button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+  .right img {
+      max-height: 100%;
+      width: auto;
+  }
+</style>
 
+<div class='left'>
+  <form action="{{ url_for('reset_tree_view') }}" method="POST">
+    <button>Reset tree</button>
+  </form>
 
+  <table border="1">
+    <thead>
+      <tr>
+        <th>Fact</th>
+        <th>Value</th>
+        <th>Done if true</th>
+        <th>Done if False</th>
+        <th>Ratio of roots turns false</th>
+        <th>Ratio of facts is pruned</th>
+        <th>Answer</th>
+      </tr>
+    </thead>
+    <tbody>
 
-<img src="{{url_for('send_diagram_file')}}">
+      <p>{{ true_hypothesis }}</p>
+      
+      {% for fact, val, goalT, goalLast, valH, valL in facts %}
+      <tr style='{{ loop.first and "background-color: #fffbb3" }}'>
+        <td>{{ fact }}</td>
+        <td>{{ val }}</td>
+        <td>{{ goalT }}</td>
+        <td>{{ goalLast }}</td>
+        <td>{{ valH }}</td>
+        <td>{{ valL }}</td>
+
+        <td>
+          <form action="{{url_for('set_truth_view')}}" method="POST">
+            <input type="hidden" name="fact" value="{{fact}}">
+            <button type="submit" name="truth" value="true">Yes</button>
+            <button type="submit" name="truth" value="false">No</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class='right'>
+  <img src="{{url_for('send_diagram_file')}}">
+
+</div>
