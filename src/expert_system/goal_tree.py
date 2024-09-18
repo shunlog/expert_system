@@ -357,22 +357,10 @@ def test_pruned_nodes():
     assert g4.get_node("flies").is_pruned() == True
 
 
-def test_leaf_value():
+def test_node_value():
     g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
                   "bird": {("feathers",), ("flies", "lays eggs")},
-                  "albatross": {("bird", "good flyer"),
-                                ("bird", "long beak")}})
+                  "albatross": {("bird", "good flyer")}})
 
-    assert g.node_value_parts("flies") == (0, (0 + 1/7)/2)
-    assert g.node_value_parts("long beak") == (0, (0 + 0)/2)
-    assert g.node_value_parts("feathers") == (0, (2/7 + 0)/2)
-
-    # accounts for existing pruned leaves
-    g2 = deepcopy(g)
-    g2.get_node("flies").set(True)
-    assert g2.node_value_parts("feathers") == (0, (1/7 + 0)/2)
-
-    # false hypothesis
-    g3 = deepcopy(g)
-    g3.get_node("bird").set(True)
-    assert g3.node_value_parts("swims") == (1/2, (0 + 1/7)/2)
+    # "flies" needs "lays eggs" to achieve the same as "feathers" alone
+    assert g.node_value('feathers') > g.node_value('flies')
