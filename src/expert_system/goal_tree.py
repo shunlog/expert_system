@@ -82,9 +82,10 @@ class Goal:
         return set(node for and_set in self.body for node in and_set)
 
     def set(self, truth: bool) -> None:
-        '''Set the truth value of node, and call _update()'''
+        '''Set the truth value of node and re-evaluate the parents'''
         self.truth = truth
-        self._update(False)
+        for parent in self.parents:
+            parent._update()
 
     def eval_body(self) -> Union[bool, None]:
         '''Evaluate the truth of this node according to the rules in the body.
@@ -93,19 +94,15 @@ class Goal:
             return None
         return or3([and3([n.truth for n in and_set]) for and_set in self.body])
 
-    def _update(self, re_eval: bool = True) -> None:
+    def _update(self) -> None:
         '''
-        When the truth value of a node becomes known,
-        we need to re-evaluate the parents' values.
-        If `re_eval` is False, assume the truth has just been changed,
-        otherwise, evaluate the truth of this node as well.'''
-        if re_eval:
-            truth = self.eval_body()
-            if truth == self.truth:
-                # value hasn't changed, don't do anything
-                return
-            self.truth = truth
-
+        When the truth of a node changes we need to re-evaluate the parents recursively.
+        '''
+        truth = self.eval_body()
+        if truth == self.truth:
+            # value hasn't changed, no need to re-evaluate further up
+            return
+        self.truth = truth
         for parent in self.parents:
             parent._update()
 
