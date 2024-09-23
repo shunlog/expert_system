@@ -51,7 +51,7 @@
 
       <p>{{ true_hypothesis }}</p>
       
-      {% for fact, val, goalT, goalLast, valH, valL in facts %}
+      {% for fact in facts %}
       <tr style='{{ loop.first and "background-color: #fffbb3" }}'>
         <td>{{ fact }}</td>
         <td>{{ val }}</td>

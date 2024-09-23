@@ -1,25 +1,26 @@
 from flask import Flask, request, url_for, render_template, redirect, send_file
 from copy import deepcopy
 
-from ..goal_tree import GoalTree
-from ..draw_goal_tree import render_goal_tree
-from ..spongebob_rules import spongebob_tree
+from ..goal_tree import construct_dag, update_truth
+from ..draw_goal_tree import render_DAG
+from ..spongebob_rules import spongebob_rules
+from ..DAG import DAG
 
 app = Flask(__name__)
-tree: GoalTree = GoalTree({})
+dag: DAG = construct_dag({})
+assertions: dict[str, bool] = {}
 
 
 def reset_tree() -> None:
-    global tree
-
-    # tree = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
-    #                  "bird": {("feathers",), ("flies", "lays eggs")},
-    #                  "albatross": {("bird", "good flyer")}})
-    tree = deepcopy(spongebob_tree)
+    global dag
+    dag = construct_dag(spongebob_rules)
 
 
 def set_fact_truth(fact: str, truth: bool):
-    tree.get_node(fact).set(truth)
+    assertions[fact] = truth
+    reset_tree()
+    global dag
+    dag = update_truth(dag, assertions)
 
 
 @app.route('/pic')
@@ -43,22 +44,14 @@ def set_truth_view():
 
 @app.route("/")
 def root_view():
-    render_goal_tree(tree, dir='/tmp/expert_system', fn='diagram')
-
-    if node := tree.check_result():
-        return render_template("playground.html", true_hypothesis=node.head)
+    render_DAG(dag, dir='/tmp/expert_system', fn='diagram')
 
     facts = []
-    for node in tree.leaves:
-        if node.is_known() or node.is_pruned():
+    for node in dag.all_terminals():
+        if node.truth is not None or node.pruned:
             continue
-        fact = node.head
-        goalT, goalLast, valH, valL = tree.node_value_parts(fact)
-        val = tree.node_value(fact)
-        val = round(val, 2) if isinstance(val, float) else val
-        facts.append((fact, val, goalT, goalLast,
-                      round(valH, 2), round(valL, 2)))
-    facts = sorted(facts, key=lambda i: i[1], reverse=True)
+        facts.append(node.fact)
+
     return render_template("playground.html", facts=facts)
 
 

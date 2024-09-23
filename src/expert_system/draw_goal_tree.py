@@ -1,46 +1,52 @@
 import graphviz
-from .goal_tree import Goal, GoalTree
+
+from .goal_tree import GoalTreeNode, FactNode, AndNode
+from .DAG import DAG
 
 
-def draw_node(node: Goal, graph: graphviz.Digraph) -> None:
+def draw_node(graph: graphviz.Digraph, dag: DAG, node: GoalTreeNode):
     '''Draw the current node and the links to its children
     in the given Digraph object.'''
 
-    if node.is_pruned():
-        graph.node(node.head, style='dotted')
-    elif node.is_root():
-        graph.node(node.head, color='gold', penwidth='2')
+    head: str
+    if isinstance(node, FactNode):
+        head = node.fact
+    else:
+        assert isinstance(node, AndNode)
+        head = node.parent_fact + str(node.id)
+
+    if node.pruned:
+        graph.node(head, style='dotted')
+    elif node in dag.all_starts():
+        graph.node(head, color='gold', penwidth='2')
     else:  # normal
-        graph.node(node.head)
+        graph.node(head)
+    if isinstance(node, AndNode):
+        graph.node(head, label="", xlabel="AND", shape="circle", width="0.3")
 
     # green / red based on truth
     if node.truth == True:
-        graph.node(node.head, style='filled', fillcolor='palegreen2')
+        graph.node(head, style='filled', fillcolor='palegreen2')
     elif node.truth == False:
-        graph.node(node.head, style='filled', fillcolor='lightpink1')
+        graph.node(head, style='filled', fillcolor='lightpink1')
 
-    for i, and_set in enumerate(node.body):
-        if len(and_set) == 1:
-            child = and_set[0]
-            draw_node(child, graph)
-            graph.edge(node.head, child.head)
-        else:
-            and_node_label = f'AND_{i}_{node.head}'
-            graph.node(and_node_label, shape="point", width=".1", height='.1')
-            graph.edge(node.head, and_node_label, arrowhead="none")
-            for child in and_set:
-                graph.edge(and_node_label, child.head)
+    for child_node in dag.successors(node):
+        child_head = draw_node(graph, dag, child_node)
+        graph.edge(head, child_head)
+
+    return head
 
 
-def draw_tree(tree: GoalTree, graph: graphviz.Digraph) -> None:
-    for node in tree.node_map.values():
-        draw_node(node, graph)
+def draw_DAG(dag: DAG, graph: graphviz.Digraph) -> None:
+    for node in dag.all_starts():
+        draw_node(graph, dag, node)
 
 
-def render_goal_tree(tree: GoalTree, dir="out", fn="diagram"):
+def render_DAG(dag: DAG, dir="out", fn="diagram"):
     graph = graphviz.Digraph(strict=True)
     graph.attr(rankdir='RL')
-    draw_tree(tree, graph)
+
+    draw_DAG(dag, graph)
 
     path = graph.render(directory=dir,
                         filename=fn,

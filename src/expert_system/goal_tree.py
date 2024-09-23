@@ -1,10 +1,10 @@
 #!/bin/env python3
-from typing import Optional, Union, Self
-from collections import defaultdict
-from collections.abc import Sequence, Collection, Iterable
-from copy import deepcopy
 from icecream import ic
+from dataclasses import dataclass, field
+from typing import Optional
+from functools import lru_cache
 
+from .DAG import DAG
 from .three_valued_logic import and3, or3
 
 '''
@@ -23,10 +23,8 @@ Thus we can also write a generalized rule structure like this ("..." means zero 
 
 To implement the expert system, we'll be using an augmented representation of a goal tree,
 which will act both as the knowledge base, as well as the inference engine.
-To store the knowledge, each node will keep track of its truth value,
-which can be true, false, or unknown.
-This is enough data since we are dealing with only one subject at a time.
-The way a goal tree acts as an inference engine is pretty obvious.
+A goal tree can be represented with a Directed Acyclic Graph (DAG).
+Each node can have a truth value: either True, False or Unknown (represented by None).
 
 There are two kinds of rule-based systems:
     - Production systems, which use if-then rules to derive actions from conditions.
@@ -38,330 +36,291 @@ for the optimization of asking questions and deducing facts.
 '''
 
 
-class Goal:
+@dataclass(frozen=True)
+class GoalTreeNode:
+    truth: Optional[bool] = field(default=None, kw_only=True)
+    pruned: bool = field(default=False, kw_only=True)
+
+
+@dataclass(frozen=True)
+class AndNode(GoalTreeNode):
+    parent_fact: str  # the fact string of its parent
+    id: int  # the order in which it appears in the rule definition
+
+
+@dataclass(frozen=True)
+class FactNode(GoalTreeNode):
+    fact: str
+
+
+def construct_dag(rules):
+    dag = DAG()
+    # 1. add all vertices
+    for fact, and_sets in rules.items():
+        dag.add_vertex(FactNode(fact))
+        for and_set in and_sets:
+            for child_fact in and_set:
+                dag.add_vertex(FactNode(child_fact))
+
+    # 2. add all AND-nodes and all edges
+    for fact, and_sets in rules.items():
+        for i, and_set in enumerate(and_sets):
+            assert len(and_set) >= 1
+            node = FactNode(fact)
+            if len(and_set) == 1:
+                child_fact = next(and_set.__iter__())
+                dag.add_edge(node, FactNode(child_fact))
+            else:
+                and_node = AndNode(fact, i)
+                dag.add_vertex(and_node)
+                dag.add_edge(node, and_node)
+                for child_fact in and_set:
+                    dag.add_edge(and_node, FactNode(child_fact))
+    return dag
+
+
+def update_truth(dag: DAG, assertions: dict[str, bool]) -> DAG:
+    '''Using top-down recursion, recreate the DAG
+    while evaluating each node's truth based on the given assertions,
+    which match facts to their truth values.'''
+    new_dag = DAG()
+
+    # a FactNode can have multiple parents which will call add_node on it,
+    # but the add_node function is idempotent, so we can cache it
+    @lru_cache(maxsize=None)
+    def add_node(node: GoalTreeNode) -> GoalTreeNode:
+        '''For a node in the old dag compute all the children recursively,
+        then compute the new node and add it to the new dag
+        together with the links to its new children'''
+        new_node: GoalTreeNode
+
+        # base case: leaf node
+        if dag.outdegree(node) == 0:
+            assert isinstance(node, FactNode)
+            fact = node.fact
+            truth = assertions.get(fact)
+            new_node = FactNode(fact, truth=truth)
+            new_dag.add_vertex(new_node)
+            return new_node
+
+        # recursive case
+        new_children = [add_node(succ) for succ in dag.successors(node)]
+        children_truths = [n.truth for n in new_children]
+        if isinstance(node, FactNode):
+            # check the assertions even for intermediary nodes
+            # to allow for groups of mutually exclusive facts
+            if (truth := assertions.get(node.fact)) is None:
+                truth = or3(children_truths)
+            new_node = FactNode(node.fact, truth=truth)
+        else:
+            assert isinstance(node, AndNode)
+            truth = and3(children_truths)
+            new_node = AndNode(node.parent_fact, node.id, truth=truth)
+
+        new_dag.add_vertex(new_node)
+        for new_child in new_children:
+            new_dag.add_edge(new_node, new_child)
+
+        return new_node
+
+    for root in dag.all_starts():
+        add_node(root)
+
+    return new_dag
+
+
+def update_pruned():
     '''
-    A Goal represents a node in a Goal tree (a.k.a. and-or tree).
+    A node is "pruned" when we don't care to find out its truth value.
+    This is useful for minimizing the number of questions asked.
+    For example, a node can be pruned if:
+    - all its parents' truth values have become known, or
+    - it was in a single and-set with a node that has become False,
+      so now the entire and-set is false, so this node's value doesn't matter anymore
 
-    At its core, a Goal node has three components:
-    - `head`: a statement of a fact, like "has feathers"
-    - `body`: the subproblems that need to be solved for this goal,
-      represented as a set (or-set) of sets (and-sets).
-      For leaf nodes, `body` has 0 elements.
-    - `truth`: a boolean representing whether this fact is true,
-      or None if the truthness is unknown.
-
-    Every Goal stores references both to the Goal instances from its `body`,
-    as well as to its parent Goal nodes from its `parents` field.
-    If a Goal has no parents, it is a root node in the tree.
+    A node is pruned if each of its forward links either:
+    1. links to a False and-set, or
+    2. is leading to a parent that is pruned, or
+    3. is leading to a parent whose truth is known
     '''
-    head: str
-    body: set[tuple["Goal", ...]]
-    truth: Optional[bool]
-    parents: set["Goal"]
-
-    def __init__(self, head) -> None:
-        self.head = head
-        self.body = set()
-        self.truth = None
-        self.parents = set()
-
-    def __repr__(self):
-        return f'Goal<{self.head},{self.body}>'
-
-    def is_leaf(self) -> bool:
-        return len(self.body) == 0
-
-    def is_root(self) -> bool:
-        return len(self.parents) == 0
-
-    def is_known(self) -> bool:
-        return self.truth is not None
-
-    def children(self) -> set["Goal"]:
-        '''Return an set of all the children mentioned in the body.'''
-        return set(node for and_set in self.body for node in and_set)
-
-    def set(self, truth: bool) -> None:
-        '''Set the truth value of node and re-evaluate the parents'''
-        self.truth = truth
-        for parent in self.parents:
-            parent._update()
-
-    def eval_body(self) -> Union[bool, None]:
-        '''Evaluate the truth of this node according to the rules in the body.
-        If this is a leaf node, return None'''
-        if not self.body:
-            return None
-        return or3([and3([n.truth for n in and_set]) for and_set in self.body])
-
-    def _update(self) -> None:
-        '''
-        When the truth of a node changes we need to re-evaluate the parents recursively.
-        '''
-        truth = self.eval_body()
-        if truth == self.truth:
-            # value hasn't changed, no need to re-evaluate further up
-            return
-        self.truth = truth
-        for parent in self.parents:
-            parent._update()
-
-    def is_pruned(self) -> bool:
-        '''
-        A node is "pruned" when we don't care to find out its truth value.
-        This is useful for minimizing the number of questions asked.
-        For example, a node can be pruned if:
-        - all its parents' truth values have become known, or
-        - it was in a single and-set with a node that has become False,
-          so now the entire and-set is false, so this node's value doesn't matter anymore
-
-        A node is pruned if each of its forward links either:
-        1. links to a False and-set, or
-        2. is leading to a parent that is pruned, or
-        3. is leading to a parent whose truth is known
-        '''
-        # TODO add that node is pruned if it's contained in all the and-sets of the remaining roots
-        # need the entire Tree for that, to check if there are any other remaining roots
-        if self.is_known():
-            return False
-
-        def pruned_parent(parent: Goal) -> bool:
-            a = parent.is_pruned()
-            c = parent.is_known()
-
-            def false_and_set(and_set):
-                return any(n.truth == False for n in and_set)
-            b = all(false_and_set(and_set)
-                    for and_set in parent.body if self in and_set)
-            return a or b or c
-
-        if not self.parents:
-            return False
-
-        return all(pruned_parent(p) for p in self.parents)
+    # TODO add that node is pruned if it's contained in all the and-sets of the remaining roots
+    # need the entire Tree for that, to check if there are any other remaining roots
+    return False
 
 
-class GoalTree:
+def update_values():
     '''
-    A GoalTree groups a set of Goal nodes which might be interconnected.
+    Computes the parameters that define the questioning value of a leaf node.
+    Return values:
+    1. GoalT - true if done when answered True
+    2. GoalF - true if done when answered False
+    3. ValueH - the fraction of hypotheses proven False when the answer is F.
+       In the range [0, 1], the bigger the better.
+    4. ValueL - the average fraction of pruned leaves when the answer is T and when it is F.
+       In the range [0, 1], the bigger the better.
 
-    This class makes it easy to get a node object representing a statement,
-    and it makes it possible to group multiple root nodes.
+    It's not clear what parameters to prioritize, or whether this strategy is good at all.
     '''
-    leaves: set[Goal]
-    roots: set[Goal]
-    # map a statement to its respective Goal instance.
-    node_map: dict[str, Goal]
-
-    def get_node(self, statement: str) -> Goal:
-        return self.node_map[statement]
-
-    # we need to convert all rules into a goal tree in a single function
-    # because Goals reference other Goals,
-    # so we need to keep a dict, mapping head strings to their respective Goal objects
-
-    def __init__(self, rules: dict[str, set[tuple[str, ...]]]):
-        '''
-        - rules: maps every statement to an or-set of and-sets;
-            for every statement, one Goal node will be created with all the correct associations;
-            if a statement doesn't have a rule for it, it's a leaf node.
-        '''
-        self.node_map = dict()
-
-        # 1. create all the non-leaf nodes
-        for statement in rules:
-            g = Goal(statement)
-            self.node_map[statement] = g
-
-        # 2. create all the leaf nodes
-        for or_set in rules.values():
-            for and_set in or_set:
-                for statement in and_set:
-                    if self.node_map.get(statement) is not None:
-                        continue
-                    g = Goal(statement)
-                    self.node_map[statement] = g
-
-        # 3. add children references (through the body property)
-        for g in self.node_map.values():
-            or_tup = rules.get(g.head)
-            if or_tup is None:
-                continue  # it is a leaf node, with no body
-            body = set(tuple(self.get_node(stmt) for stmt in and_tup)
-                       for and_tup in or_tup)
-            g.body = body
-
-        # 4. add the parents references
-        for g in self.node_map.values():
-            if g.body is None:
-                continue
-            for and_set2 in g.body:
-                for n in and_set2:
-                    n.parents.add(g)
-
-        # 5. find all the root nodes (with no parents)
-        # and all leaf nodes (with no children/body)
-        self.roots = {g for g in self.node_map.values() if g.is_root()}
-        self.leaves = {g for g in self.node_map.values() if g.is_leaf()}
-
-    def node_value_parts(self, fact: str) -> tuple[bool, bool, float, float]:
-        '''
-        Computes the parameters that define the questioning value of a leaf node.
-        Return values:
-        1. GoalT - true if done when answered True
-        2. GoalF - true if done when answered False
-        3. ValueH - the fraction of hypotheses proven False when the answer is F.
-           In the range [0, 1], the bigger the better.
-        4. ValueL - the average fraction of pruned leaves when the answer is T and when it is F.
-           In the range [0, 1], the bigger the better.
-
-        It's not clear what parameters to prioritize, or whether this strategy is good at all.
-        '''
-        def pruned_cnt(tree: GoalTree) -> int:
-            return sum(1 for l in tree.leaves if l.is_pruned())
-
-        def false_hypoth_cnt(tree: GoalTree) -> int:
-            return sum(1 for n in tree.roots if n.truth == False)
-
-        # initial state
-        pruned_initially = pruned_cnt(self)
-        false_initially = false_hypoth_cnt(self)
-
-        # if the answer is True
-        tree_T = deepcopy(self)
-        tree_T.get_node(fact).set(True)
-        pruned_T = pruned_cnt(tree_T) - pruned_initially
-        goalT = tree_T.check_result() is not None
-
-        # if the answer is False
-        tree_F = deepcopy(self)
-        tree_F.get_node(fact).set(False)
-        pruned_F = pruned_cnt(tree_F) - pruned_initially
-        false_hypoth = false_hypoth_cnt(tree_F)
-        goalF = tree_F.check_result() is not None
-
-        valH = (false_hypoth - false_initially) / len(self.roots)
-        valL = (pruned_T + pruned_F) / 2 / len(self.leaves)
-        return (goalT, goalF, valH, valL)
-
-    def node_value(self, fact: str) -> Union[Goal, float]:
-        '''Computes the node questioning value by combining the parts.
-        Prioritize questions that lead to being done.'''
-        goalT, goalF, valH, valL = self.node_value_parts(fact)
-        if goalT and goalF:
-            # unlikely, but still worth prioritizing
-            return 1000
-        elif goalT or goalF:
-            return 999
-
-        return valH + valL
-
-    def check_result(self, ) -> Optional[Goal]:
-        '''
-        Check if a hypothesis was found to be true,
-        or if there is only one remaining, meaning it has to be the one.
-        Also assert that there is always one and only one answer.
-        '''
-        true_roots = [r for r in self.roots if r.truth]
-        # TODO uncomment this when the pruning is completed
-        # assert len(true_roots) < 2
-        if true_roots:
-            return true_roots[0]
-
-        unknown_roots = [r for r in self.roots if r.truth is None]
-        # TODO uncomment this when the pruning is completed
-        # assert len(unknown_roots) != 0  # can't have all be False
-        if len(unknown_roots) == 1:
-            return unknown_roots[0]
-        return None
+    pass
 
 
-def test_init_tree():
-    g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
-                  "bird": {("feathers",), ("flies", "lays eggs")},
-                  "albatross": {("bird", "good flyer")}})
-
-    assert g.get_node('penguin')
-    assert g.get_node('flies')
-    # rules
-    assert "swims" in [n.head for n in g.get_node('penguin').body.pop()]
-    # parents
-    bird_parents = [n.head for n in g.get_node('bird').parents]
-    assert ("albatross" in bird_parents and "penguin" in bird_parents)
-    # tree roots
-    root_heads = [n.head for n in g.roots]
-    assert ("albatross" in root_heads and "penguin" in root_heads)
+rules = {"penguin": ({"bird", "swims"},),
+         "bird": ({"feathers"}, {"flies"}),
+         "albatross": ({"bird", "good flyer"},)}
 
 
-def test_set_truth_bubbles_upward():
-    # test that setting the truth of a node
-    # updates the truth of its parents
-    g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
-                  "bird": {("feathers",), ("flies", "lays eggs")},
-                  "albatross": {("bird", "good flyer")}})
+def test_construct_dag():
+    dag = DAG()
+    fn_feathers = FactNode("feathers")
+    fn_flies = FactNode("flies")
+    fn_bird = FactNode("bird")
+    fn_penguin = FactNode("penguin")
+    an_penguin_0 = AndNode("penguin", 0)
+    fn_swims = FactNode("swims")
+    fn_albatross = FactNode("albatross")
+    an_albatross_0 = AndNode("albatross", 0)
+    fn_good_flyer = FactNode("good flyer")
 
-    g2 = deepcopy(g)
-    g2.get_node("feathers").set(True)
-    assert g2.get_node("feathers").truth == True
-    assert g2.get_node("bird").truth == True
-    assert g2.get_node("albatross").truth == None
+    dag.add_vertex(fn_feathers, fn_flies, fn_bird, fn_penguin,
+                   an_penguin_0, fn_swims, fn_albatross, an_albatross_0,
+                   fn_good_flyer)
 
-    g3 = deepcopy(g)
-    g3.get_node("feathers").set(False)
-    # Or(False, None) = None
-    assert g3.get_node("bird").truth is None
-    # And(True, None) = None
-    g3.get_node("flies").set(True)
-    assert g3.get_node("bird").truth is None
-    g3.get_node("lays eggs").set(True)
-    assert g3.get_node("bird").truth == True
-    g3.get_node("good flyer").set(True)
+    dag.add_edge(fn_penguin, an_penguin_0)
+    dag.add_edge(an_penguin_0, fn_swims, fn_bird)
+    dag.add_edge(fn_bird, fn_feathers)
+    dag.add_edge(fn_bird, fn_flies)
+    dag.add_edge(fn_albatross, an_albatross_0)
+    dag.add_edge(an_albatross_0, fn_bird, fn_good_flyer)
 
-    g4 = deepcopy(g)
-    g4.get_node("feathers").set(False)
-    g4.get_node("lays eggs").set(False)
-    assert g4.get_node("bird").truth == False
+    dag2 = construct_dag(rules)
+
+    assert dag == dag2
 
 
-def test_pruned_nodes():
-    g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
-                  "bird": {("feathers",), ("flies", "lays eggs")},
-                  "albatross": {("bird", "good flyer"),
-                                ("bird", "long beak")}})
+def test_update_dag_truth_1():
+    assertions = {"flies": True}
 
-    # parent's value is known
-    g2 = deepcopy(g)
-    assert g2.get_node("penguin").is_pruned() == False  # test root node
-    assert g2.get_node("flies").is_pruned() == False
-    g2.get_node("bird").set(True)
-    assert g2.get_node("flies").is_pruned() == True
-    # known nodes are not considered pruned
-    assert g2.get_node("bird").is_pruned() == False
+    dag = DAG()
+    # OR node
+    fn_flies = FactNode("flies", truth=True)
+    fn_bird = FactNode("bird", truth=True)
 
-    # link is pruned because of a False node in the same and-set
-    g3 = deepcopy(g)
-    assert g3.get_node("flies").is_pruned() == False
-    g3.get_node("lays eggs").set(False)
-    assert g3.get_node("flies").is_pruned() == True
+    fn_feathers = FactNode("feathers")
+    fn_penguin = FactNode("penguin")
+    an_penguin_0 = AndNode("penguin", 0)
+    fn_swims = FactNode("swims")
+    fn_albatross = FactNode("albatross")
+    an_albatross_0 = AndNode("albatross", 0)
+    fn_good_flyer = FactNode("good flyer")
 
-    # all links must be pruned
-    # in this case, "bird" is in 2 and-sets of parent "albatross"
-    # and in one and-set of parent "penguin"
-    g4 = deepcopy(g)
-    g4.get_node("swims").set(False)
-    assert g4.get_node("bird").is_pruned() == False
-    g4.get_node("long beak").set(False)
-    assert g4.get_node("bird").is_pruned() == False
-    g4.get_node("good flyer").set(False)
-    assert g4.get_node("bird").is_pruned() == True
-    # test recursion
-    assert g4.get_node("flies").is_pruned() == True
+    dag.add_vertex(fn_feathers, fn_flies, fn_bird, fn_penguin,
+                   an_penguin_0, fn_swims, fn_albatross, an_albatross_0,
+                   fn_good_flyer)
+
+    dag.add_edge(fn_penguin, an_penguin_0)
+    dag.add_edge(an_penguin_0, fn_swims, fn_bird)
+    dag.add_edge(fn_bird, fn_feathers)
+    dag.add_edge(fn_bird, fn_flies)
+    dag.add_edge(fn_albatross, an_albatross_0)
+    dag.add_edge(an_albatross_0, fn_bird, fn_good_flyer)
+
+    dag2 = update_truth(construct_dag(rules), assertions)
+    assert dag == dag2
 
 
-def test_node_value():
-    g = GoalTree({"penguin": {("bird", "swims", "doesn't fly")},
-                  "bird": {("feathers",), ("flies", "lays eggs")},
-                  "albatross": {("bird", "good flyer")}})
+def test_update_dag_truth_2():
+    assertions = {"flies": True,
+                  "swims": True}
 
-    # "flies" needs "lays eggs" to achieve the same as "feathers" alone
-    assert g.node_value('feathers') > g.node_value('flies')
+    dag = DAG()
+
+    fn_flies = FactNode("flies", truth=True)
+    fn_swims = FactNode("swims", truth=True)
+    # OR + AND node
+    fn_bird = FactNode("bird", truth=True)
+    an_penguin_0 = AndNode("penguin", 0, truth=True)
+    fn_penguin = FactNode("penguin", truth=True)
+
+    # unchanged
+    fn_feathers = FactNode("feathers")
+    fn_albatross = FactNode("albatross")
+    an_albatross_0 = AndNode("albatross", 0)
+    fn_good_flyer = FactNode("good flyer")
+
+    dag.add_vertex(fn_feathers, fn_flies, fn_bird, fn_penguin,
+                   an_penguin_0, fn_swims, fn_albatross, an_albatross_0,
+                   fn_good_flyer)
+
+    dag.add_edge(fn_penguin, an_penguin_0)
+    dag.add_edge(an_penguin_0, fn_swims, fn_bird)
+    dag.add_edge(fn_bird, fn_feathers)
+    dag.add_edge(fn_bird, fn_flies)
+    dag.add_edge(fn_albatross, an_albatross_0)
+    dag.add_edge(an_albatross_0, fn_bird, fn_good_flyer)
+
+    dag2 = update_truth(construct_dag(rules), assertions)
+    assert dag == dag2
+
+
+def test_update_truth_unchanged():
+    dag = DAG()
+    fn_feathers = FactNode("feathers")
+    fn_flies = FactNode("flies")
+    fn_bird = FactNode("bird")
+    fn_penguin = FactNode("penguin")
+    an_penguin_0 = AndNode("penguin", 0)
+    fn_swims = FactNode("swims")
+    fn_albatross = FactNode("albatross")
+    an_albatross_0 = AndNode("albatross", 0)
+    fn_good_flyer = FactNode("good flyer")
+
+    dag.add_vertex(fn_feathers, fn_flies, fn_bird, fn_penguin,
+                   an_penguin_0, fn_swims, fn_albatross, an_albatross_0,
+                   fn_good_flyer)
+
+    dag.add_edge(fn_penguin, an_penguin_0)
+    dag.add_edge(an_penguin_0, fn_swims, fn_bird)
+    dag.add_edge(fn_bird, fn_feathers)
+    dag.add_edge(fn_bird, fn_flies)
+    dag.add_edge(fn_albatross, an_albatross_0)
+    dag.add_edge(an_albatross_0, fn_bird, fn_good_flyer)
+
+    dag2 = update_truth(construct_dag(rules), {})
+    assert dag == dag2
+
+
+def test_update_truth_intermediate_node():
+    # set intermediate node "bird" to True
+    # and check that its child "flies" is still set to False
+    assertions = {"bird": True,
+                  "flies": False}
+    dag = DAG()
+    fn_flies = FactNode("flies", truth=False)
+    fn_bird = FactNode("bird", truth=True)
+
+    fn_feathers = FactNode("feathers")
+    fn_penguin = FactNode("penguin")
+    an_penguin_0 = AndNode("penguin", 0)
+    fn_swims = FactNode("swims")
+    fn_albatross = FactNode("albatross")
+    an_albatross_0 = AndNode("albatross", 0)
+    fn_good_flyer = FactNode("good flyer")
+
+    dag.add_vertex(fn_feathers, fn_flies, fn_bird, fn_penguin,
+                   an_penguin_0, fn_swims, fn_albatross, an_albatross_0,
+                   fn_good_flyer)
+
+    dag.add_edge(fn_penguin, an_penguin_0)
+    dag.add_edge(an_penguin_0, fn_swims, fn_bird)
+    dag.add_edge(fn_bird, fn_feathers)
+    dag.add_edge(fn_bird, fn_flies)
+    dag.add_edge(fn_albatross, an_albatross_0)
+    dag.add_edge(an_albatross_0, fn_bird, fn_good_flyer)
+
+    dag2 = update_truth(construct_dag(rules), assertions)
+    assert dag == dag2
+
+
+if __name__ == "__main__":
+    test_update_dag_truth_1()
+    test_update_truth_unchanged()
