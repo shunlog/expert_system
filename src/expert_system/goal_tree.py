@@ -168,7 +168,7 @@ class GoalTree:
         '''
         self.node_map = dict()
 
-        # 1. create all the intermediate nodes (which have a production rule)
+        # 1. create all the non-leaf nodes
         for statement in rules:
             g = Goal(statement)
             self.node_map[statement] = g
@@ -182,7 +182,7 @@ class GoalTree:
                     g = Goal(statement)
                     self.node_map[statement] = g
 
-        # 3. for each Goal, add the body with references to other goals
+        # 3. add children references (through the body property)
         for g in self.node_map.values():
             or_tup = rules.get(g.head)
             if or_tup is None:
@@ -191,7 +191,7 @@ class GoalTree:
                        for and_tup in or_tup)
             g.body = body
 
-        # 4. for each goal with a body, add itself as parent of all its children nodes
+        # 4. add the parents references
         for g in self.node_map.values():
             if g.body is None:
                 continue

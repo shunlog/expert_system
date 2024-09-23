@@ -3,7 +3,7 @@ from copy import deepcopy
 
 from ..goal_tree import GoalTree
 from ..draw_goal_tree import render_goal_tree
-from ..expert_system import spongebob_tree
+from ..spongebob_rules import spongebob_tree
 
 app = Flask(__name__)
 tree: GoalTree = GoalTree({})
