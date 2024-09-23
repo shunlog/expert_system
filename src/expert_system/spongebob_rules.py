@@ -2,9 +2,9 @@ from .goal_tree import GoalTree
 from .draw_goal_tree import render_goal_tree
 
 spongebob_tree = GoalTree({
-    "Spongebob": {("sponge", "has square pants", 'wears a suit'), },
-    "Stanley": {("sponge", "has tall body", 'wears a suit')},
-    "sponge": {("has a square head", "is yellow", "has holes")},
+    "Spongebob": {("sponge", "has square head", "has square pants", 'wears a suit'), },
+    "Stanley": {("sponge", "has square head", "has tall body", 'wears a suit')},
+    "sponge": {("is yellow", "has holes")},
 
     "Squidward": {('octopus', 'wears a brown t-shirt')},
     "Squilliam": {('octopus', 'has a thick monobrow')},
@@ -35,7 +35,7 @@ spongebob_tree = GoalTree({
                         ('plankton', 'is female'),
                         ('plankton', 'has hair')},
 
-    "computer": {("has a square head", "is not organic"), },
+    "computer": {("has a square head", "is not organic"), ("looks like a robot",)},
     "Karen Plankton": {('computer', 'has a green line on the monitor')},
     "Karen 2.0": {('computer', 'has a red line on the monitor'),
                   ('computer', 'has a slick body')},
