@@ -64,7 +64,7 @@ def update_truth(dag: DAG, assertions: dict[str, bool]) -> DAG:
         together with the links to its new children'''
         new_node: GoalTreeNode
 
-        # base case
+        # base case: leaf node
         if dag.outdegree(node) == 0:
             assert isinstance(node, FactNode)
             fact = node.fact
@@ -77,6 +77,8 @@ def update_truth(dag: DAG, assertions: dict[str, bool]) -> DAG:
         new_children = [add_node(succ) for succ in dag.successors(node)]
         children_truths = [n.truth for n in new_children]
         if isinstance(node, FactNode):
+            # check the assertions even for intermediary nodes
+            # to allow for groups of mutually exclusive facts
             if (truth := assertions.get(node.fact)) is None:
                 truth = or3(children_truths)
             new_node = FactNode(node.fact, truth=truth)
@@ -231,6 +233,41 @@ def test_update_truth_unchanged():
     dag.add_edge(an_albatross_0, fn_bird, fn_good_flyer)
 
     dag2 = update_truth(construct_dag(rules), {})
+    assert dag == dag2
+
+
+def test_update_truth_intermediate_node():
+    # set intermediate node "bird" to True
+    # and check that its child "flies" is still set to False
+    assertions = {"bird": True,
+                  "flies": False}
+    dag = DAG()
+    fn_flies = FactNode("flies", truth=False)
+    fn_bird = FactNode("bird", truth=True)
+
+    fn_feathers = FactNode("feathers")
+    an_bird_0 = AndNode("bird", 0)
+    an_bird_1 = AndNode("bird", 1, truth=False)
+    fn_penguin = FactNode("penguin")
+    an_penguin_0 = AndNode("penguin", 0)
+    fn_swims = FactNode("swims")
+    fn_albatross = FactNode("albatross")
+    an_albatross_0 = AndNode("albatross", 0)
+    fn_good_flyer = FactNode("good flyer")
+
+    dag.add_vertex(fn_feathers, fn_flies, fn_bird, an_bird_0, an_bird_1,
+                   fn_penguin, an_penguin_0, fn_swims, fn_albatross,
+                   an_albatross_0, fn_good_flyer)
+
+    dag.add_edge(fn_penguin, an_penguin_0)
+    dag.add_edge(an_penguin_0, fn_swims, fn_bird)
+    dag.add_edge(fn_bird, an_bird_0, an_bird_1)
+    dag.add_edge(an_bird_0, fn_feathers)
+    dag.add_edge(an_bird_1, fn_flies)
+    dag.add_edge(fn_albatross, an_albatross_0)
+    dag.add_edge(an_albatross_0, fn_bird, fn_good_flyer)
+
+    dag2 = update_truth(construct_dag(rules), assertions)
     assert dag == dag2
 
 
