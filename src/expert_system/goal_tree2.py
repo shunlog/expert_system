@@ -41,11 +41,17 @@ def construct_dag(rules):
     # 2. add all AND-nodes and all edges
     for fact, and_sets in rules.items():
         for i, and_set in enumerate(and_sets):
-            and_node = AndNode(fact, i)
-            dag.add_vertex(and_node)
-            dag.add_edge(FactNode(fact), and_node)
-            for child_fact in and_set:
-                dag.add_edge(and_node, FactNode(child_fact))
+            assert len(and_set) >= 1
+            node = FactNode(fact)
+            if len(and_set) == 1:
+                child_fact = next(and_set.__iter__())
+                dag.add_edge(node, FactNode(child_fact))
+            else:
+                and_node = AndNode(fact, i)
+                dag.add_vertex(and_node)
+                dag.add_edge(node, and_node)
+                for child_fact in and_set:
+                    dag.add_edge(and_node, FactNode(child_fact))
     return dag
 
 
@@ -109,8 +115,6 @@ def test_construct_dag():
     fn_feathers = FactNode("feathers")
     fn_flies = FactNode("flies")
     fn_bird = FactNode("bird")
-    an_bird_0 = AndNode("bird", 0)
-    an_bird_1 = AndNode("bird", 1)
     fn_penguin = FactNode("penguin")
     an_penguin_0 = AndNode("penguin", 0)
     fn_swims = FactNode("swims")
@@ -118,15 +122,14 @@ def test_construct_dag():
     an_albatross_0 = AndNode("albatross", 0)
     fn_good_flyer = FactNode("good flyer")
 
-    dag.add_vertex(fn_feathers, fn_flies, fn_bird, an_bird_0, an_bird_1,
-                   fn_penguin, an_penguin_0, fn_swims, fn_albatross,
-                   an_albatross_0, fn_good_flyer)
+    dag.add_vertex(fn_feathers, fn_flies, fn_bird, fn_penguin,
+                   an_penguin_0, fn_swims, fn_albatross, an_albatross_0,
+                   fn_good_flyer)
 
     dag.add_edge(fn_penguin, an_penguin_0)
     dag.add_edge(an_penguin_0, fn_swims, fn_bird)
-    dag.add_edge(fn_bird, an_bird_0, an_bird_1)
-    dag.add_edge(an_bird_0, fn_feathers)
-    dag.add_edge(an_bird_1, fn_flies)
+    dag.add_edge(fn_bird, fn_feathers)
+    dag.add_edge(fn_bird, fn_flies)
     dag.add_edge(fn_albatross, an_albatross_0)
     dag.add_edge(an_albatross_0, fn_bird, fn_good_flyer)
 
@@ -142,10 +145,8 @@ def test_update_dag_truth_1():
     # OR node
     fn_flies = FactNode("flies", truth=True)
     fn_bird = FactNode("bird", truth=True)
-    an_bird_1 = AndNode("bird", 1, truth=True)
 
     fn_feathers = FactNode("feathers")
-    an_bird_0 = AndNode("bird", 0)
     fn_penguin = FactNode("penguin")
     an_penguin_0 = AndNode("penguin", 0)
     fn_swims = FactNode("swims")
@@ -153,15 +154,14 @@ def test_update_dag_truth_1():
     an_albatross_0 = AndNode("albatross", 0)
     fn_good_flyer = FactNode("good flyer")
 
-    dag.add_vertex(fn_feathers, fn_flies, fn_bird, an_bird_0, an_bird_1,
-                   fn_penguin, an_penguin_0, fn_swims, fn_albatross,
-                   an_albatross_0, fn_good_flyer)
+    dag.add_vertex(fn_feathers, fn_flies, fn_bird, fn_penguin,
+                   an_penguin_0, fn_swims, fn_albatross, an_albatross_0,
+                   fn_good_flyer)
 
     dag.add_edge(fn_penguin, an_penguin_0)
     dag.add_edge(an_penguin_0, fn_swims, fn_bird)
-    dag.add_edge(fn_bird, an_bird_0, an_bird_1)
-    dag.add_edge(an_bird_0, fn_feathers)
-    dag.add_edge(an_bird_1, fn_flies)
+    dag.add_edge(fn_bird, fn_feathers)
+    dag.add_edge(fn_bird, fn_flies)
     dag.add_edge(fn_albatross, an_albatross_0)
     dag.add_edge(an_albatross_0, fn_bird, fn_good_flyer)
 
@@ -179,26 +179,23 @@ def test_update_dag_truth_2():
     fn_swims = FactNode("swims", truth=True)
     # OR + AND node
     fn_bird = FactNode("bird", truth=True)
-    an_bird_1 = AndNode("bird", 1, truth=True)
     an_penguin_0 = AndNode("penguin", 0, truth=True)
     fn_penguin = FactNode("penguin", truth=True)
 
     # unchanged
     fn_feathers = FactNode("feathers")
-    an_bird_0 = AndNode("bird", 0)
     fn_albatross = FactNode("albatross")
     an_albatross_0 = AndNode("albatross", 0)
     fn_good_flyer = FactNode("good flyer")
 
-    dag.add_vertex(fn_feathers, fn_flies, fn_bird, an_bird_0, an_bird_1,
-                   fn_penguin, an_penguin_0, fn_swims, fn_albatross,
-                   an_albatross_0, fn_good_flyer)
+    dag.add_vertex(fn_feathers, fn_flies, fn_bird, fn_penguin,
+                   an_penguin_0, fn_swims, fn_albatross, an_albatross_0,
+                   fn_good_flyer)
 
     dag.add_edge(fn_penguin, an_penguin_0)
     dag.add_edge(an_penguin_0, fn_swims, fn_bird)
-    dag.add_edge(fn_bird, an_bird_0, an_bird_1)
-    dag.add_edge(an_bird_0, fn_feathers)
-    dag.add_edge(an_bird_1, fn_flies)
+    dag.add_edge(fn_bird, fn_feathers)
+    dag.add_edge(fn_bird, fn_flies)
     dag.add_edge(fn_albatross, an_albatross_0)
     dag.add_edge(an_albatross_0, fn_bird, fn_good_flyer)
 
@@ -211,8 +208,6 @@ def test_update_truth_unchanged():
     fn_feathers = FactNode("feathers")
     fn_flies = FactNode("flies")
     fn_bird = FactNode("bird")
-    an_bird_0 = AndNode("bird", 0)
-    an_bird_1 = AndNode("bird", 1)
     fn_penguin = FactNode("penguin")
     an_penguin_0 = AndNode("penguin", 0)
     fn_swims = FactNode("swims")
@@ -220,15 +215,14 @@ def test_update_truth_unchanged():
     an_albatross_0 = AndNode("albatross", 0)
     fn_good_flyer = FactNode("good flyer")
 
-    dag.add_vertex(fn_feathers, fn_flies, fn_bird, an_bird_0, an_bird_1,
-                   fn_penguin, an_penguin_0, fn_swims, fn_albatross,
-                   an_albatross_0, fn_good_flyer)
+    dag.add_vertex(fn_feathers, fn_flies, fn_bird, fn_penguin,
+                   an_penguin_0, fn_swims, fn_albatross, an_albatross_0,
+                   fn_good_flyer)
 
     dag.add_edge(fn_penguin, an_penguin_0)
     dag.add_edge(an_penguin_0, fn_swims, fn_bird)
-    dag.add_edge(fn_bird, an_bird_0, an_bird_1)
-    dag.add_edge(an_bird_0, fn_feathers)
-    dag.add_edge(an_bird_1, fn_flies)
+    dag.add_edge(fn_bird, fn_feathers)
+    dag.add_edge(fn_bird, fn_flies)
     dag.add_edge(fn_albatross, an_albatross_0)
     dag.add_edge(an_albatross_0, fn_bird, fn_good_flyer)
 
@@ -246,8 +240,6 @@ def test_update_truth_intermediate_node():
     fn_bird = FactNode("bird", truth=True)
 
     fn_feathers = FactNode("feathers")
-    an_bird_0 = AndNode("bird", 0)
-    an_bird_1 = AndNode("bird", 1, truth=False)
     fn_penguin = FactNode("penguin")
     an_penguin_0 = AndNode("penguin", 0)
     fn_swims = FactNode("swims")
@@ -255,15 +247,14 @@ def test_update_truth_intermediate_node():
     an_albatross_0 = AndNode("albatross", 0)
     fn_good_flyer = FactNode("good flyer")
 
-    dag.add_vertex(fn_feathers, fn_flies, fn_bird, an_bird_0, an_bird_1,
-                   fn_penguin, an_penguin_0, fn_swims, fn_albatross,
-                   an_albatross_0, fn_good_flyer)
+    dag.add_vertex(fn_feathers, fn_flies, fn_bird, fn_penguin,
+                   an_penguin_0, fn_swims, fn_albatross, an_albatross_0,
+                   fn_good_flyer)
 
     dag.add_edge(fn_penguin, an_penguin_0)
     dag.add_edge(an_penguin_0, fn_swims, fn_bird)
-    dag.add_edge(fn_bird, an_bird_0, an_bird_1)
-    dag.add_edge(an_bird_0, fn_feathers)
-    dag.add_edge(an_bird_1, fn_flies)
+    dag.add_edge(fn_bird, fn_feathers)
+    dag.add_edge(fn_bird, fn_flies)
     dag.add_edge(fn_albatross, an_albatross_0)
     dag.add_edge(an_albatross_0, fn_bird, fn_good_flyer)
 
