@@ -64,6 +64,11 @@ class DAG(object):
         '''Get the vertices list'''
         return self.__data.vertices()
 
+    def __str__(self):
+        def vertex_repr(v):
+            return (v, [vertex_repr(child) for child in self.successors(v)])
+        return (self, [vertex_repr(child) for child in self.all_starts()])
+
     def __eq__(self, other):
         if not isinstance(other, DAG):
             return False
