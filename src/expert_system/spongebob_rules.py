@@ -40,13 +40,19 @@ spongebob_rules = {
                   {'computer', 'has a slick body'})
 }
 
+spongebob_exclusive_groups = ({'sponge', 'octopus', 'starfish', 'crustacean', 'crab', 'lobster',
+                               'plankton', 'computer'},
+                              {'is red', 'is green', 'is yellow', 'is coral-pink'})
+
 
 if __name__ == "__main__":
-    from .goal_tree import construct_dag, update_truth
+    from frozendict import frozendict
+    from .goal_tree import GoalTree, eval_goaltree
     from .draw_goal_tree import render_DAG
 
-    dag = update_truth(construct_dag(spongebob_rules),
-                       {"is red": False,
-                        "looks like a robot": True})
+    assertions = frozendict({"is red": False,
+                             "looks like a robot": True})
+    gt = GoalTree(spongebob_rules, spongebob_exclusive_groups, assertions)
+    dag = eval_goaltree(gt)
 
     render_DAG(dag)

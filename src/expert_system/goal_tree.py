@@ -102,6 +102,7 @@ def update_truth(dag: DAG, assertions: frozendict[str, bool],
 
     # a FactNode can have multiple parents which will call add_node on it,
     # but the add_node function is idempotent, so we can cache it
+
     @lru_cache(maxsize=None)
     def add_node(node: GoalTreeNode) -> GoalTreeNode:
         '''For a node in the old dag compute all the children recursively,
@@ -420,13 +421,14 @@ def test_update_truth_assertion_over_inferred():
 
 
 def test_update_truth_with_exclusive_groups():
-    rules = {"F": ({"A", "B", "C"},)}
-    assertions = {"A": True}
+    rules = {"F": ({"A", "B", "C"},),
+             "A": ({"S"},)}
+    assertions = {"S": True}
     exclusive_groups = ({"A", "B", "C"},)
     gt = GoalTree(rules, exclusive_groups, assertions)
     truths = dag_truths(eval_goaltree(gt))
 
-    assert truths == {"A": True, "B": False, "C": False, "F": False}
+    assert truths == {"S": True, "A": True, "B": False, "C": False, "F": False}
 
 
 def test_update_pruned_AND():
