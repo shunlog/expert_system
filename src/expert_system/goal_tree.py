@@ -191,7 +191,7 @@ class GoalTree:
         object.__setattr__(self, "dag", construct_dag(self.rules))
 
 
-def eval(gt: GoalTree) -> DAG:
+def eval_goaltree(gt: GoalTree) -> DAG:
     '''evaluate the truth and pruned state of each node and return the new DAG.'''
     return update_pruned(update_truth(gt.dag, gt.assertions))
 
@@ -201,10 +201,10 @@ def node_value(gt: GoalTree, node: FactNode) -> dict:
     Computes the parameters that define the questioning value of a node.
     '''
     assertions_F = gt.assertions.set(node.fact, False)
-    dagF = eval(replace(gt, assertions=assertions_F))
+    dagF = eval_goaltree(replace(gt, assertions=assertions_F))
 
     assertions_T = gt.assertions.set(node.fact, True)
-    dagT = eval(replace(gt, assertions=assertions_T))
+    dagT = eval_goaltree(replace(gt, assertions=assertions_T))
 
     def false_roots_cnt(dag):
         return sum(1 for r in dag.all_starts() if r.truth == False)
