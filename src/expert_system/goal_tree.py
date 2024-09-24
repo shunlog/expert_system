@@ -1,6 +1,6 @@
 #!/bin/env python3
 from icecream import ic
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Optional
 from functools import lru_cache
 
@@ -152,31 +152,19 @@ def update_pruned(dag: DAG) -> DAG:
         then compute the new node and add it to the new dag
         together with the links from its parents.'''
         new_node: GoalTreeNode
-
         # base case: root node
         if dag.indegree(node) == 0:
             new_dag.add_vertex(node)
-            return node
             # assuming root nodes can't be pruned
-
+            return node
         # recursive case
         new_parents = [add_node(p) for p in dag.predecessors(node)]
         pruned = node.truth is None and all(
             ((p.truth is not None) or p.pruned) for p in new_parents)
-
-        if isinstance(node, FactNode):
-            new_node = FactNode(node.fact, truth=node.truth,
-                                pruned=pruned)
-        else:
-            assert isinstance(node, AndNode)
-            new_node = AndNode(node.parent_fact, node.id,
-                               truth=node.truth,
-                               pruned=pruned)
-
+        new_node = replace(node, pruned=pruned)
         new_dag.add_vertex(new_node)
         for new_parent in new_parents:
             new_dag.add_edge(new_parent, new_node)
-
         return new_node
 
     for leaf in dag.all_terminals():
