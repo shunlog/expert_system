@@ -1,7 +1,7 @@
 
 spongebob_rules = {
-    "Spongebob": ({"sponge", "has square head", "has square pants", 'wears a suit'},),
-    "Stanley": ({"sponge", "has square head", "has tall body", 'wears a suit'},),
+    "Spongebob": ({"sponge", "has a square head", "has square pants", 'wears a suit'},),
+    "Stanley": ({"sponge", "has a square head", "has tall body", 'wears a suit'},),
     "sponge": ({"is yellow", "has holes"},),
 
     "Squidward": ({'octopus', 'wears a brown t-shirt'},),
