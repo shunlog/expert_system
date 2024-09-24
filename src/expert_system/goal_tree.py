@@ -3,6 +3,7 @@ from icecream import ic
 from dataclasses import dataclass, field, replace
 from typing import Optional
 from functools import lru_cache
+from frozendict import frozendict
 
 from .DAG import DAG
 from .three_valued_logic import and3, or3
@@ -53,7 +54,14 @@ class FactNode(GoalTreeNode):
     fact: str
 
 
-def construct_dag(rules):
+@dataclass(frozen=True)
+class GoalTreeData:
+    rules: dict[str, tuple[set[str], ...]]
+    exclusive_groups: tuple[set[str], ...] = tuple()
+    assertions: frozendict[str, bool] = frozendict()
+
+
+def construct_dag(rules: dict[str, tuple[set[str], ...]]):
     dag = DAG()
     # 1. add all vertices
     for fact, and_sets in rules.items():
@@ -173,9 +181,15 @@ def update_pruned(dag: DAG) -> DAG:
     return new_dag
 
 
-def update_values():
+def full_dag(data: GoalTreeData):
+    '''Constructs the DAG from the rules,
+    updates the truth values and the pruned nodes.'''
+    return update_pruned(update_truth(construct_dag(data.rules), data.assertions))
+
+
+def node_value(data: GoalTreeData, node: GoalTreeNode):
     '''
-    Computes the parameters that define the questioning value of a leaf node.
+    Computes the parameters that define the questioning value of a node.
     Return values:
     1. GoalT - true if done when answered True
     2. GoalF - true if done when answered False
@@ -186,7 +200,30 @@ def update_values():
 
     It's not clear what parameters to prioritize, or whether this strategy is good at all.
     '''
-    pass
+
+    dag = full_dag(data)
+
+    assertions_F = data.assertions.set(node.fact, False)
+    dag_F = full_dag(replace(data, assertions=assertions_F))
+
+    assertions_T = data.assertions.set(node.fact, True)
+    dag_T = full_dag(replace(data, assertions=assertions_T))
+
+    def false_roots_cnt(dag):
+        return sum(1 for r in dag.all_starts() if r.truth == False)
+
+    def pruned_leaves_cnt(dag):
+        return sum(1 for r in dag.all_terminals() if r.pruned)
+
+    # how many roots have turned false if False
+    roots_cut = false_roots_cnt(dag_F) - false_roots_cnt(dag)
+
+    l0 = pruned_leaves_cnt(dag)  # pruned leaves count initially
+    lT = pruned_leaves_cnt(dag_T)  # pruned leaves count if True
+    lF = pruned_leaves_cnt(dag_F)  # pruned leaves count if False
+    leaves_cut_avg = ((lT - l0) + (lF - l0)) / 2
+
+    return {"roots_cut": roots_cut, "leaves_cut_avg": leaves_cut_avg}
 
 
 rules = {"penguin": ({"bird", "swims"},),
@@ -417,5 +454,16 @@ def test_update_pruned_OR():
 
 
 if __name__ == "__main__":
-    test_update_dag_truth_1()
-    test_update_truth_unchanged()
+
+    from .spongebob_rules import spongebob_rules
+
+    data = GoalTreeData(spongebob_rules)
+    ic(data)
+
+    dag = full_dag(data)
+
+    for node in dag.all_terminals():
+
+        ic(node)
+        v = node_value(data, node)
+        ic(v)

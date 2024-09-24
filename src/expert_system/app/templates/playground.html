@@ -39,26 +39,22 @@
     <thead>
       <tr>
         <th>Fact</th>
-        <th>Value</th>
-        <th>Done if true</th>
-        <th>Done if False</th>
-        <th>Ratio of roots turns false</th>
-        <th>Ratio of facts is pruned</th>
+        {% for part_label in facts[0][1].keys() %}
+        <th>{{ part_label }}</th>
+        {% endfor %}
         <th>Answer</th>
       </tr>
     </thead>
     <tbody>
-
       <p>{{ true_hypothesis }}</p>
       
-      {% for fact in facts %}
+      {% for fact, parts_dict in facts %}
       <tr style='{{ loop.first and "background-color: #fffbb3" }}'>
         <td>{{ fact }}</td>
-        <td>{{ val }}</td>
-        <td>{{ goalT }}</td>
-        <td>{{ goalLast }}</td>
-        <td>{{ valH }}</td>
-        <td>{{ valL }}</td>
+
+        {% for part in parts_dict.values() %}
+        <td>{{ part }}</td>
+        {% endfor %}
 
         <td>
           <form action="{{url_for('set_truth_view')}}" method="POST">

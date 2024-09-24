@@ -1,26 +1,25 @@
 from flask import Flask, request, url_for, render_template, redirect, send_file
 from copy import deepcopy
+from dataclasses import replace
 
-from ..goal_tree import construct_dag, update_truth, update_pruned
+from ..goal_tree import construct_dag, update_truth, update_pruned, full_dag, node_value, \
+    GoalTreeData
 from ..draw_goal_tree import render_DAG
 from ..spongebob_rules import spongebob_rules
 from ..DAG import DAG
 
 app = Flask(__name__)
-dag: DAG = construct_dag({})
-assertions: dict[str, bool] = {}
+data: GoalTreeData
 
 
 def reset_tree() -> None:
-    global dag, assertions
-    dag = construct_dag(spongebob_rules)
-    assertions = {}
+    global data
+    data = GoalTreeData(spongebob_rules)
 
 
 def set_fact_truth(fact: str, truth: bool):
-    assertions[fact] = truth
-    global dag
-    dag = update_pruned(update_truth(dag, assertions))
+    global data
+    data = replace(data, assertions=data.assertions.set(fact, truth))
 
 
 @app.route('/pic')
@@ -44,13 +43,17 @@ def set_truth_view():
 
 @app.route("/")
 def root_view():
+    global data
+    dag = full_dag(data)
+
     render_DAG(dag, dir='/tmp/expert_system', fn='diagram')
 
     facts = []
     for node in dag.all_terminals():
         if node.truth is not None or node.pruned:
             continue
-        facts.append(node.fact)
+        facts.append((node.fact, node_value(data, node)))
+    facts = sorted(facts, key=lambda v: v[1]["roots_cut"], reverse=True)
 
     return render_template("playground.html", facts=facts)
 
