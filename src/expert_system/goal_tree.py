@@ -321,6 +321,33 @@ def test_update_truth_intermediate_node():
     assert dag == dag2
 
 
+def test_update_truth_assertion_over_inferred():
+    rules = {"A": tuple({"B"}),
+             "B": tuple({"C"})}
+    assertions = {"B": False,
+                  "C": True}
+    dag = DAG()
+    # even though C is true making B true,
+    # B should stay False because that's an assertion
+    a = FactNode("A", truth=False)
+    b = FactNode("B", truth=False)
+    c = FactNode("C", truth=True)
+    dag.add_vertex(a, b, c)
+    dag.add_edge(a, b)
+    dag.add_edge(b, c)
+    dag2 = update_truth(construct_dag(rules),
+                        assertions)
+    assert dag == dag2
+
+
+def test_update_pruned():
+    rules = {"penguin": ({"bird", "swims"},),
+             "bird": ({"feathers"}, {"flies"}),
+             "albatross": ({"bird", "good flyer"},)}
+
+    assert True
+
+
 if __name__ == "__main__":
     test_update_dag_truth_1()
     test_update_truth_unchanged()
