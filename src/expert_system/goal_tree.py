@@ -54,13 +54,6 @@ class FactNode(GoalTreeNode):
     fact: str
 
 
-@dataclass(frozen=True)
-class GoalTreeData:
-    rules: dict[str, tuple[set[str], ...]]
-    exclusive_groups: tuple[set[str], ...] = tuple()
-    assertions: frozendict[str, bool] = frozendict()
-
-
 def construct_dag(rules: dict[str, tuple[set[str], ...]]):
     dag = DAG()
     # 1. add all vertices
@@ -87,7 +80,7 @@ def construct_dag(rules: dict[str, tuple[set[str], ...]]):
     return dag
 
 
-def update_truth(dag: DAG, assertions: dict[str, bool]) -> DAG:
+def update_truth(dag: DAG, assertions: frozendict[str, bool]) -> DAG:
     '''Using top-down recursion, recreate the DAG
     while evaluating each node's truth based on the given assertions,
     which match facts to their truth values.'''
@@ -181,33 +174,37 @@ def update_pruned(dag: DAG) -> DAG:
     return new_dag
 
 
-def full_dag(data: GoalTreeData):
-    '''Constructs the DAG from the rules,
-    updates the truth values and the pruned nodes.'''
-    return update_pruned(update_truth(construct_dag(data.rules), data.assertions))
+@dataclass(frozen=True)
+class GoalTree:
+    '''
+    - dag: the DAG skeleton, never changes after init
+    - rules: just for reference, never change
+    - exclusive_groups: never change after init
+    - assertions: can only be set via method set()
+    '''
+    rules: dict[str, tuple[set[str], ...]]
+    exclusive_groups: tuple[set[str], ...] = tuple()
+    assertions: frozendict[str, bool] = frozendict()
+    dag: DAG = field(init=False)
+
+    def __post_init__(self):
+        object.__setattr__(self, "dag", construct_dag(self.rules))
 
 
-def node_value(data: GoalTreeData, node: GoalTreeNode):
+def eval(gt: GoalTree) -> DAG:
+    '''evaluate the truth and pruned state of each node and return the new DAG.'''
+    return update_pruned(update_truth(gt.dag, gt.assertions))
+
+
+def node_value(gt: GoalTree, node: FactNode) -> dict:
     '''
     Computes the parameters that define the questioning value of a node.
-    Return values:
-    1. GoalT - true if done when answered True
-    2. GoalF - true if done when answered False
-    3. ValueH - the fraction of hypotheses proven False when the answer is F.
-       In the range [0, 1], the bigger the better.
-    4. ValueL - the average fraction of pruned leaves when the answer is T and when it is F.
-       In the range [0, 1], the bigger the better.
-
-    It's not clear what parameters to prioritize, or whether this strategy is good at all.
     '''
+    assertions_F = gt.assertions.set(node.fact, False)
+    dagF = eval(replace(gt, assertions=assertions_F))
 
-    dag = full_dag(data)
-
-    assertions_F = data.assertions.set(node.fact, False)
-    dag_F = full_dag(replace(data, assertions=assertions_F))
-
-    assertions_T = data.assertions.set(node.fact, True)
-    dag_T = full_dag(replace(data, assertions=assertions_T))
+    assertions_T = gt.assertions.set(node.fact, True)
+    dagT = eval(replace(gt, assertions=assertions_T))
 
     def false_roots_cnt(dag):
         return sum(1 for r in dag.all_starts() if r.truth == False)
@@ -216,11 +213,11 @@ def node_value(data: GoalTreeData, node: GoalTreeNode):
         return sum(1 for r in dag.all_terminals() if r.pruned)
 
     # how many roots have turned false if False
-    roots_cut = false_roots_cnt(dag_F) - false_roots_cnt(dag)
+    roots_cut = false_roots_cnt(dagF) - false_roots_cnt(gt.dag)
 
-    l0 = pruned_leaves_cnt(dag)  # pruned leaves count initially
-    lT = pruned_leaves_cnt(dag_T)  # pruned leaves count if True
-    lF = pruned_leaves_cnt(dag_F)  # pruned leaves count if False
+    l0 = pruned_leaves_cnt(gt.dag)  # pruned leaves count initially
+    lT = pruned_leaves_cnt(dagT)  # pruned leaves count if True
+    lF = pruned_leaves_cnt(dagF)  # pruned leaves count if False
     leaves_cut_avg = ((lT - l0) + (lF - l0)) / 2
 
     return {"roots_cut": roots_cut, "leaves_cut_avg": leaves_cut_avg}
@@ -426,7 +423,6 @@ def test_update_pruned_AND():
 
     dag2 = update_pruned(update_truth(construct_dag(rules),
                                       assertions))
-    ic(dag2.__str__())
     assert dag == dag2
 
 
@@ -457,13 +453,10 @@ if __name__ == "__main__":
 
     from .spongebob_rules import spongebob_rules
 
-    data = GoalTreeData(spongebob_rules)
-    ic(data)
+    assertions = frozendict({"is yellow": True})
+    gt = GoalTree(spongebob_rules)
 
-    dag = full_dag(data)
-
-    for node in dag.all_terminals():
-
+    for node in gt.dag.all_terminals():
         ic(node)
-        v = node_value(data, node)
+        v = node_value(gt, node)
         ic(v)
