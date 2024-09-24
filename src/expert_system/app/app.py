@@ -1,7 +1,7 @@
 from flask import Flask, request, url_for, render_template, redirect, send_file
 from copy import deepcopy
 
-from ..goal_tree import construct_dag, update_truth
+from ..goal_tree import construct_dag, update_truth, update_pruned
 from ..draw_goal_tree import render_DAG
 from ..spongebob_rules import spongebob_rules
 from ..DAG import DAG
@@ -12,15 +12,15 @@ assertions: dict[str, bool] = {}
 
 
 def reset_tree() -> None:
-    global dag
+    global dag, assertions
     dag = construct_dag(spongebob_rules)
+    assertions = {}
 
 
 def set_fact_truth(fact: str, truth: bool):
     assertions[fact] = truth
-    reset_tree()
     global dag
-    dag = update_truth(dag, assertions)
+    dag = update_pruned(update_truth(dag, assertions))
 
 
 @app.route('/pic')

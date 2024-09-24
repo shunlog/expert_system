@@ -15,14 +15,15 @@ def draw_node(graph: graphviz.Digraph, dag: DAG, node: GoalTreeNode):
         assert isinstance(node, AndNode)
         head = node.parent_fact + str(node.id)
 
+    if isinstance(node, AndNode):
+        graph.node(head, label="", xlabel="AND", shape="circle", width="0.3")
+
     if node.pruned:
         graph.node(head, style='dotted')
     elif node in dag.all_starts():
         graph.node(head, color='gold', penwidth='2')
     else:  # normal
         graph.node(head)
-    if isinstance(node, AndNode):
-        graph.node(head, label="", xlabel="AND", shape="circle", width="0.3")
 
     # green / red based on truth
     if node.truth == True:
