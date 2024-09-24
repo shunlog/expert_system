@@ -129,23 +129,60 @@ def update_truth(dag: DAG, assertions: dict[str, bool]) -> DAG:
     return new_dag
 
 
-def update_pruned():
+def update_pruned(dag: DAG) -> DAG:
     '''
+    Using bottom-up recursion, recreate the DAG
+    but with the pruned state of each node re-evaluated.
+
     A node is "pruned" when we don't care to find out its truth value.
     This is useful for minimizing the number of questions asked.
-    For example, a node can be pruned if:
-    - all its parents' truth values have become known, or
-    - it was in a single and-set with a node that has become False,
-      so now the entire and-set is false, so this node's value doesn't matter anymore
 
-    A node is pruned if each of its forward links either:
-    1. links to a False and-set, or
-    2. is leading to a parent that is pruned, or
-    3. is leading to a parent whose truth is known
+    A node is pruned if each of its parents either:
+    1. has a known truth (not None)
+    2. is pruned
     '''
     # TODO add that node is pruned if it's contained in all the and-sets of the remaining roots
     # need the entire Tree for that, to check if there are any other remaining roots
-    return False
+    new_dag = DAG()
+
+    # the add_node function is idempotent, so we can cache it
+    @lru_cache(maxsize=None)
+    def add_node(node: GoalTreeNode) -> GoalTreeNode:
+        '''For a node in the old dag, compute all the parents recursively,
+        then compute the new node and add it to the new dag
+        together with the links from its parents.'''
+        new_node: GoalTreeNode
+
+        # base case: root node
+        if dag.indegree(node) == 0:
+            new_dag.add_vertex(node)
+            return node
+            # assuming root nodes can't be pruned
+
+        # recursive case
+        new_parents = [add_node(p) for p in dag.predecessors(node)]
+        pruned = node.truth is None and all(
+            ((p.truth is not None) or p.pruned) for p in new_parents)
+
+        if isinstance(node, FactNode):
+            new_node = FactNode(node.fact, truth=node.truth,
+                                pruned=pruned)
+        else:
+            assert isinstance(node, AndNode)
+            new_node = AndNode(node.parent_fact, node.id,
+                               truth=node.truth,
+                               pruned=pruned)
+
+        new_dag.add_vertex(new_node)
+        for new_parent in new_parents:
+            new_dag.add_edge(new_parent, new_node)
+
+        return new_node
+
+    for leaf in dag.all_terminals():
+        add_node(leaf)
+
+    return new_dag
 
 
 def update_values():
@@ -340,12 +377,55 @@ def test_update_truth_assertion_over_inferred():
     assert dag == dag2
 
 
-def test_update_pruned():
-    rules = {"penguin": ({"bird", "swims"},),
-             "bird": ({"feathers"}, {"flies"}),
-             "albatross": ({"bird", "good flyer"},)}
+def test_update_pruned_AND():
+    rules = {"A": ({"B", "C", "D"},
+                   {"E"}),
+             "E": tuple({"D"})}
+    assertions = {"B": False}
 
-    assert True
+    # B is false, therefore the and-node is false
+    # therefore C is pruned
+    # but D is not pruned because it still has an unknown parent
+    a = FactNode("A")
+    a_and = AndNode("A", 0, truth=False)
+    b = FactNode("B", truth=False)
+    c = FactNode("C", pruned=True)
+    d = FactNode("D")
+    e = FactNode("E")
+    dag = DAG()
+    dag.add_vertex(a, a_and, b, c, d, e)
+    dag.add_edge(a, a_and)
+    dag.add_edge(a_and, b, c, d)
+    dag.add_edge(a, e)
+    dag.add_edge(e, d)
+
+    dag2 = update_pruned(update_truth(construct_dag(rules),
+                                      assertions))
+    ic(dag2.__str__())
+    assert dag == dag2
+
+
+def test_update_pruned_OR():
+    rules = {"A": ({"B"}, {"C"}, {"D"}),
+             "E": ({"D"},)}
+    assertions = {"B": True}
+
+    # B is True, therefore A is True
+    # therefore C is pruned
+    # but D is not pruned because it still has an unknown parent
+    a = FactNode("A", truth=True)
+    b = FactNode("B", truth=True)
+    c = FactNode("C", pruned=True)
+    d = FactNode("D")
+    e = FactNode("E")
+    dag = DAG()
+    dag.add_vertex(a, b, c, d, e)
+    dag.add_edge(a, b, c, d)
+    dag.add_edge(e, d)
+
+    dag2 = update_pruned(update_truth(construct_dag(rules),
+                                      assertions))
+    assert dag == dag2
 
 
 if __name__ == "__main__":
