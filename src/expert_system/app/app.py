@@ -4,7 +4,7 @@ from dataclasses import replace
 
 from ..goal_tree import eval_goaltree, node_value, GoalTree
 from ..draw_goal_tree import render_DAG
-from ..spongebob_rules import spongebob_rules
+from ..spongebob_rules import spongebob_rules, spongebob_exclusive_groups
 from ..DAG import DAG
 
 app = Flask(__name__)
@@ -13,7 +13,7 @@ gt: GoalTree
 
 def reset_tree() -> None:
     global gt
-    gt = GoalTree(spongebob_rules)
+    gt = GoalTree(spongebob_rules, spongebob_exclusive_groups)
 
 
 def set_fact_truth(fact: str, truth: bool):

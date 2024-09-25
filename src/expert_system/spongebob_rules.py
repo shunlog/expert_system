@@ -40,7 +40,7 @@ spongebob_rules = {
                   {'computer', 'has a slick body'})
 }
 
-spongebob_exclusive_groups = ({'sponge', 'octopus', 'starfish', 'crustacean', 'crab', 'lobster',
+spongebob_exclusive_groups = ({'sponge', 'octopus', 'starfish', 'crustacean',
                                'plankton', 'computer'},
                               {'is red', 'is green', 'is yellow', 'is coral-pink'})
 

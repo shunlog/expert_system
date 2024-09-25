@@ -80,29 +80,14 @@ def construct_dag(rules: dict[str, tuple[set[str], ...]]):
     return dag
 
 
-def update_truth(dag: DAG, assertions: frozendict[str, bool],
-                 exclusive_groups: tuple[set[str], ...] = tuple()) -> DAG:
+def update_truth(dag: DAG, assertions: frozendict[str, bool]) -> DAG:
     '''Using top-down recursion, recreate the DAG
     while evaluating each node's truth based on the given assertions,
     which match facts to their truth values.'''
     new_dag = DAG()
 
-    excluded_facts: list[str] = []
-    for group in exclusive_groups:
-        true_facts = [fact for fact in group if assertions.get(fact) == True]
-        ic(true_facts)
-        if not true_facts:
-            continue
-        if len(true_facts) > 1:
-            raise ValueError(
-                "Only one fact from each exclusive group can be true.")
-        match = true_facts[0]
-        excluded_facts.extend(group - set(match))
-    all_assert = assertions | {f: False for f in excluded_facts}
-
     # a FactNode can have multiple parents which will call add_node on it,
     # but the add_node function is idempotent, so we can cache it
-
     @lru_cache(maxsize=None)
     def add_node(node: GoalTreeNode) -> GoalTreeNode:
         '''For a node in the old dag compute all the children recursively,
@@ -114,7 +99,7 @@ def update_truth(dag: DAG, assertions: frozendict[str, bool],
         if dag.outdegree(node) == 0:
             assert isinstance(node, FactNode)
             fact = node.fact
-            truth = all_assert.get(fact)
+            truth = assertions.get(fact)
             new_node = FactNode(fact, truth=truth)
             new_dag.add_vertex(new_node)
             return new_node
@@ -123,9 +108,9 @@ def update_truth(dag: DAG, assertions: frozendict[str, bool],
         new_children = [add_node(succ) for succ in dag.successors(node)]
         children_truths = [n.truth for n in new_children]
         if isinstance(node, FactNode):
-            # check the all_assert even for intermediary nodes
+            # check the assertions even for intermediary nodes
             # to allow for groups of mutually exclusive facts
-            if (truth := all_assert.get(node.fact)) is None:
+            if (truth := assertions.get(node.fact)) is None:
                 truth = or3(children_truths)
             new_node = FactNode(node.fact, truth=truth)
         else:
@@ -142,6 +127,38 @@ def update_truth(dag: DAG, assertions: frozendict[str, bool],
     for root in dag.all_starts():
         add_node(root)
 
+    return new_dag
+
+
+def update_truth_with_groups(
+        dag: DAG, assertions: frozendict[str, bool],
+        exclusive_groups: tuple[set[str], ...] = tuple()):
+    while True:
+        new_dag = update_truth(dag, assertions)
+
+        truths = dag_truths(new_dag)
+
+        excluded_facts: list[str] = []
+        for group in exclusive_groups:
+            true_facts = [fact for fact in group if truths.get(fact) == True]
+            ic(true_facts)
+            if not true_facts:
+                continue
+            if len(true_facts) > 1:
+                raise ValueError(
+                    "Only one fact from each exclusive group can be true.")
+            match = true_facts[0]
+            ic(match)
+
+            excluded_facts.extend(ic(group - {match}))
+        if not excluded_facts:
+            break
+        ic(excluded_facts)
+        old_truths = truths
+        truths = truths | {f: False for f in excluded_facts}
+        if old_truths == truths:
+            break
+        assertions = truths
     return new_dag
 
 
@@ -208,7 +225,7 @@ class GoalTree:
 
 def eval_goaltree(gt: GoalTree) -> DAG:
     '''evaluate the truth and pruned state of each node and return the new DAG.'''
-    return update_pruned(update_truth(gt.dag, gt.assertions, gt.exclusive_groups))
+    return update_pruned(update_truth_with_groups(gt.dag, gt.assertions, gt.exclusive_groups))
 
 
 def node_value(gt: GoalTree, node: FactNode) -> dict:
@@ -426,7 +443,8 @@ def test_update_truth_with_exclusive_groups():
     assertions = {"S": True}
     exclusive_groups = ({"A", "B", "C"},)
     gt = GoalTree(rules, exclusive_groups, assertions)
-    truths = dag_truths(eval_goaltree(gt))
+    dag = update_truth_with_groups(gt.dag, assertions, exclusive_groups)
+    truths = dag_truths(dag)
 
     assert truths == {"S": True, "A": True, "B": False, "C": False, "F": False}
 

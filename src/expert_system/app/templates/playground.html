@@ -39,9 +39,11 @@
     <thead>
       <tr>
         <th>Fact</th>
+        {% if facts %}
         {% for part_label in facts[0][1].keys() %}
         <th>{{ part_label }}</th>
         {% endfor %}
+        {% endif %}
         <th>Answer</th>
       </tr>
     </thead>
