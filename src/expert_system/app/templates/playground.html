@@ -41,7 +41,7 @@
         <th>Fact</th>
         {% if facts %}
         {% for part_label in facts[0][1].keys() %}
-        <th>{{ part_label }}</th>
+        <th>{{ part_label.replace('_', ' ') }}</th>
         {% endfor %}
         {% endif %}
         <th>Answer</th>

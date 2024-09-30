@@ -209,10 +209,12 @@ def update_pruned(dag: DAG) -> DAG:
 @dataclass(frozen=True)
 class GoalTree:
     '''
-    - dag: the DAG skeleton, never changes after init
-    - rules: just for reference, never change
-    - exclusive_groups: never change after init
-    - assertions: can only be set via method set()
+    - dag: the DAG, evaluated using the assertions
+    - rules: representation of the if-then rules,
+        the mapping of facts to the and-sets
+    - exclusive_groups: list of sets of facts,
+        such that at most one element of each set can be true
+    - assertions: mapping of facts to their truth value
     '''
     rules: dict[str, tuple[set[str], ...]]
     exclusive_groups: tuple[set[str], ...] = tuple()
@@ -220,39 +222,41 @@ class GoalTree:
     dag: DAG = field(init=False)
 
     def __post_init__(self):
-        object.__setattr__(self, "dag", construct_dag(self.rules))
+        dag = construct_dag(self.rules)
+        evaluated_dag = update_pruned(
+            update_truth_with_groups(dag, self.assertions, self.exclusive_groups))
+        object.__setattr__(self, "dag", evaluated_dag)
 
-
-def eval_goaltree(gt: GoalTree) -> DAG:
-    '''evaluate the truth and pruned state of each node and return the new DAG.'''
-    return update_pruned(update_truth_with_groups(gt.dag, gt.assertions, gt.exclusive_groups))
+    def set(self, new_assertions: dict[str, bool]):
+        return GoalTree(self.rules,
+                        self.exclusive_groups,
+                        self.assertions | new_assertions)
 
 
 def node_value(gt: GoalTree, node: FactNode) -> dict:
     '''
     Computes the parameters that define the questioning value of a node.
     '''
-    assertions_F = gt.assertions.set(node.fact, False)
-    dagF = eval_goaltree(replace(gt, assertions=assertions_F))
+    # goal tree if node is true
+    gt_true = gt.set({node.fact: True})
 
-    assertions_T = gt.assertions.set(node.fact, True)
-    dagT = eval_goaltree(replace(gt, assertions=assertions_T))
+    # goal tree if node is false
+    gt_false = gt.set({node.fact: False})
 
-    def false_roots_cnt(dag):
-        return sum(1 for r in dag.all_starts() if r.truth == False)
+    def roots_turned_false(new_gt):
+        start = sum(1 for r in gt.dag.all_starts() if r.truth == False)
+        end = sum(1 for r in new_gt.dag.all_starts() if r.truth == False)
+        return end-start
 
-    def pruned_leaves_cnt(dag):
-        return sum(1 for r in dag.all_terminals() if r.pruned)
+    def leaves_pruned(new_gt):
+        start = sum(1 for r in gt.dag.all_terminals() if r.pruned)
+        end = sum(1 for r in new_gt.dag.all_terminals() if r.pruned)
+        return end-start
 
-    # how many roots have turned false if False
-    roots_cut = false_roots_cnt(dagF) - false_roots_cnt(gt.dag)
-
-    l0 = pruned_leaves_cnt(gt.dag)  # pruned leaves count initially
-    lT = pruned_leaves_cnt(dagT)  # pruned leaves count if True
-    lF = pruned_leaves_cnt(dagF)  # pruned leaves count if False
-    leaves_cut_avg = ((lT - l0) + (lF - l0)) / 2
-
-    return {"roots_cut": roots_cut, "leaves_cut_avg": leaves_cut_avg}
+    return {"roots_cut_if_false": roots_turned_false(gt_false),
+            "roots_cut_if_true": roots_turned_false(gt_true),
+            "leaved_pruned_if_false": leaves_pruned(gt_false),
+            "leaved_pruned_if_true": leaves_pruned(gt_true)}
 
 
 def dag_truths(dag: DAG) -> dict[str, Optional[bool]]:
@@ -497,6 +501,17 @@ def test_update_pruned_OR():
     dag2 = update_pruned(update_truth(construct_dag(rules),
                                       assertions))
     assert dag == dag2
+
+
+def test_GoalTree_class():
+    rules = {"A": ({"B"}, {"C"}, {"D"}),
+             "E": ({"D"},)}
+    gt = GoalTree(rules)
+    assert FactNode("B") in gt.dag.vertices()
+
+    updated_gt = gt.set({"B": True})
+    assert FactNode("B", truth=True) in updated_gt.dag.vertices()
+    assert FactNode("A", truth=True) in updated_gt.dag.vertices()
 
 
 if __name__ == "__main__":

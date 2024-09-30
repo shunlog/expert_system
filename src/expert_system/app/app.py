@@ -2,7 +2,7 @@ from flask import Flask, request, url_for, render_template, redirect, send_file
 from copy import deepcopy
 from dataclasses import replace
 
-from ..goal_tree import eval_goaltree, node_value, GoalTree
+from ..goal_tree import node_value, GoalTree
 from ..draw_goal_tree import render_DAG
 from ..spongebob_rules import spongebob_rules, spongebob_exclusive_groups
 from ..DAG import DAG
@@ -18,7 +18,7 @@ def reset_tree() -> None:
 
 def set_fact_truth(fact: str, truth: bool):
     global gt
-    gt = replace(gt, assertions=gt.assertions.set(fact, truth))
+    gt = gt.set({fact: truth})
 
 
 @app.route('/pic')
@@ -43,16 +43,15 @@ def set_truth_view():
 @app.route("/")
 def root_view():
     global gt
-    data_dag = eval_goaltree(gt)
-
-    render_DAG(data_dag, dir='/tmp/expert_system', fn='diagram')
+    render_DAG(gt.dag, dir='/tmp/expert_system', fn='diagram')
 
     facts = []
-    for node in data_dag.all_terminals():
+    for node in gt.dag.all_terminals():
         if node.truth is not None or node.pruned:
             continue
         facts.append((node.fact, node_value(gt, node)))
-    facts = sorted(facts, key=lambda v: v[1]["roots_cut"], reverse=True)
+    facts = sorted(facts, key=lambda v: v[1]
+                   ["roots_cut_if_false"], reverse=True)
 
     return render_template("playground.html", facts=facts)
 
