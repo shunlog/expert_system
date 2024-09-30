@@ -2,7 +2,7 @@
 from icecream import ic
 from dataclasses import dataclass, field, replace
 from typing import Optional
-from functools import lru_cache
+from functools import cache
 from frozendict import frozendict
 from math import sqrt
 import pytest
@@ -94,7 +94,7 @@ def update_truth(dag: DAG, assertions: frozendict[str, Optional[bool]]) -> DAG:
 
     # a FactNode can have multiple parents which will call add_node on it,
     # but the add_node function is idempotent, so we can cache it
-    @lru_cache(maxsize=None)
+    @cache
     def add_node(node: GoalTreeNode) -> GoalTreeNode:
         '''For a node in the old dag compute all the children recursively,
         then compute the new node and add it to the new dag
@@ -179,7 +179,7 @@ def update_pruned(dag: DAG) -> DAG:
     new_dag = DAG()
 
     # the add_node function is idempotent, so we can cache it
-    @lru_cache(maxsize=None)
+    @cache
     def add_node(node: GoalTreeNode) -> GoalTreeNode:
         '''For a node in the old dag, compute all the parents recursively,
         then compute the new node and add it to the new dag
