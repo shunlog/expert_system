@@ -16,7 +16,7 @@ spongebob_rules = {
                  {'is coral-pink', 'has red dots across its body'}),
     "Patrick Star": ({'starfish', 'wears only a pair of shorts', 'is male'},),
     "Margie Star": ({'starfish', 'has hair', 'is female'},),
-    "Herb Star": ({'starfish', 'has a beard'},),
+    "Herb Star": ({'starfish', 'has a beard', 'is male'},),
 
     "crustacean": ({'is red', 'has short, thin legs', 'has large pincers'},),
 
