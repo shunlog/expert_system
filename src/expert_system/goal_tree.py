@@ -228,6 +228,9 @@ def solution(dag: DAG) -> Optional[str]:
 @dataclass(frozen=True)
 class GoalTree:
     '''
+    This is a helper class to keep the DAG together with the exclusive groups,
+    and to automatically updated it when the assertions are changed.
+
     - dag: the DAG, evaluated using the assertions
     - rules: representation of the if-then rules,
         the mapping of facts to the and-sets
@@ -238,13 +241,17 @@ class GoalTree:
     rules: dict[str, tuple[set[str], ...]]
     exclusive_groups: tuple[set[str], ...] = tuple()
     assertions: frozendict[str, bool] = frozendict()
-    dag: DAG = field(init=False)
+    dag: DAG = None
 
     def __post_init__(self):
         if not isinstance(self.assertions, frozendict):
             object.__setattr__(self, "assertions", frozendict(self.assertions))
 
-        dag = construct_dag(self.rules)
+        dag = self.dag
+        if not self.dag:
+            # don't reconstruct skeleton when simply updating the assertions
+            dag = construct_dag(self.rules)
+
         evaluated_dag = update_pruned(
             update_truth_with_groups(dag, self.assertions, self.exclusive_groups))
         guaranteed_assertions = update_guaranteed(evaluated_dag,
@@ -257,7 +264,8 @@ class GoalTree:
     def set(self, new_assertions: dict[str, bool]):
         return GoalTree(self.rules,
                         self.exclusive_groups,
-                        ic(self.assertions | new_assertions))
+                        ic(self.assertions | new_assertions),
+                        self.dag)
 
 
 def node_value(gt: GoalTree, node: FactNode) -> dict:
