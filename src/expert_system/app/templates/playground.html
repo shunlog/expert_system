@@ -44,12 +44,12 @@
   <p>Answer: {{ solution }}</p>
   {% endif %}
 
-  {% if facts %}
+  {% if fact_values %}
   <table border="1">
     <thead>
       <tr>
         <th>Fact</th>
-        {% for part_label in facts[0][1].keys() %}
+        {% for part_label in fact_values[0][1].keys() %}
         <th>{{ part_label.replace('_', ' ') }}</th>
         {% endfor %}
         <th>Answer</th>
@@ -58,7 +58,7 @@
     <tbody>
       <p>{{ true_hypothesis }}</p>
       
-      {% for fact, parts_dict in facts %}
+      {% for fact, parts_dict in fact_values %}
       <tr style='{{ loop.first and "background-color: #fffbb3" }}'>
         <td>{{ fact }}</td>
 
