@@ -1,7 +1,7 @@
 # tip: only use OR alternatives when strictly necessary.
 # tip: make sure you provide as much info on the individual level as possible: gender, hair, color
 
-spongebob_rules = {
+rules = {
     "Spongebob": ({"sponge", "has a square head", "has square pants",
                    'wears a suit', 'is male'},),
     "Stanley": ({"sponge", "has a square head", "has tall body",
@@ -41,10 +41,10 @@ spongebob_rules = {
                   {'computer', 'has a slick body', 'is female'})
 }
 
-spongebob_exclusive_groups = ({'sponge', 'octopus', 'starfish', 'crustacean',
+exclusive_groups = ({'sponge', 'octopus', 'starfish', 'crustacean',
                                'plankton', 'computer'},
-                              {'is male', 'is female'},
-                              {'is red', 'is green', 'is yellow', 'is coral-pink'})
+                    {'is male', 'is female'},
+                    {'is red', 'is green', 'is yellow', 'is coral-pink'})
 
 
 if __name__ == "__main__":
@@ -54,6 +54,6 @@ if __name__ == "__main__":
 
     assertions = frozendict({"is red": False,
                              "sponge": True})
-    gt = GoalTree(spongebob_rules, spongebob_exclusive_groups, assertions)
+    gt = GoalTree(rules, exclusive_groups, assertions)
 
     render_DAG(gt.dag)

@@ -4,8 +4,10 @@ from dataclasses import replace
 
 from ..goal_tree import node_value, GoalTree, solution
 from ..draw_goal_tree import render_DAG
-from ..spongebob_rules import spongebob_rules, spongebob_exclusive_groups
 from ..DAG import DAG
+
+from ..spongebob_rules import rules, exclusive_groups
+# from ..zoo_rules import rules, exclusive_groups
 
 app = Flask(__name__)
 gt: GoalTree
@@ -23,7 +25,7 @@ def rated_facts() -> list[tuple[str, dict]]:
 
 def reset_tree() -> None:
     global gt
-    gt = GoalTree(spongebob_rules, spongebob_exclusive_groups)
+    gt = GoalTree(rules, exclusive_groups)
 
 
 def set_fact_truth(fact: str, truth: bool):
