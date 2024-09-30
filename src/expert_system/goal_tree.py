@@ -252,14 +252,18 @@ class GoalTree:
             # don't reconstruct skeleton when simply updating the assertions
             dag = construct_dag(self.rules)
 
-        evaluated_dag = update_pruned(
+        dag = update_pruned(
             update_truth_with_groups(dag, self.assertions, self.exclusive_groups))
-        guaranteed_assertions = update_guaranteed(evaluated_dag,
-                                                  self.assertions,
-                                                  self.exclusive_groups)
-        guaranteed_dag = update_pruned(
-            update_truth_with_groups(dag, guaranteed_assertions, self.exclusive_groups))
-        object.__setattr__(self, "dag", guaranteed_dag)
+
+        # For performance, only proceed if there are few leaves to check
+        if sum(1 for x in dag.all_terminals() if x.truth == None) < 5:
+            guaranteed_assertions = update_guaranteed(dag,
+                                                      self.assertions,
+                                                      self.exclusive_groups)
+            dag = update_pruned(
+                update_truth_with_groups(dag, guaranteed_assertions, self.exclusive_groups))
+
+        object.__setattr__(self, "dag", dag)
 
     def set(self, new_assertions: dict[str, bool]):
         return GoalTree(self.rules,
@@ -316,13 +320,10 @@ def update_guaranteed(
     We make the assumption that one and only one root will be True,
     therefore in some cases we can guarantee that a leaf can only be true or false.'''
 
-    # For performance, only proceed if there are few unknown roots
-    if sum(1 for x in dag.all_starts() if x.truth == None) > 3:
-        return assertions
-
     updates: dict[str, bool] = {}
     for leaf in dag.all_terminals():
-
+        # Ideally we would check all nodes, not just the leaves
+        # but that's too slow with the current approach
         dag_false = update_truth_with_groups(
             dag, assertions.set(leaf.fact, False), exclusive_groups)
         must_be_false = False
@@ -334,7 +335,7 @@ def update_guaranteed(
                 dag, assertions.set(leaf.fact, True), exclusive_groups)
             try:
                 solution(dag_true)
-            except:
+            except ValueError:
                 must_be_false = True
         except ValueError:
             pass
@@ -350,7 +351,7 @@ def update_guaranteed(
             updates |= {leaf.fact: True}
         if must_be_false:
             updates |= {leaf.fact: False}
-
+    ic(updates)
     return assertions | updates
 
 
