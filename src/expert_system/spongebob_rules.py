@@ -51,7 +51,7 @@ if __name__ == "__main__":
     from .draw_goal_tree import render_DAG
 
     assertions = frozendict({"is red": False,
-                             "has a slick body": True})
+                             "sponge": True})
     gt = GoalTree(spongebob_rules, spongebob_exclusive_groups, assertions)
 
     render_DAG(gt.dag)

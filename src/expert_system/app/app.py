@@ -51,7 +51,7 @@ def root_view():
             continue
         facts.append((node.fact, node_value(gt, node)))
     facts = sorted(facts, key=lambda v: v[1]
-                   ["roots_cut_if_false"], reverse=True)
+                   ["value"], reverse=True)
 
     return render_template("playground.html", facts=facts)
 

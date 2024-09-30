@@ -4,6 +4,8 @@ from dataclasses import dataclass, field, replace
 from typing import Optional
 from functools import lru_cache
 from frozendict import frozendict
+from math import sqrt
+import pytest
 
 from .DAG import DAG
 from .three_valued_logic import and3, or3
@@ -54,6 +56,10 @@ class FactNode(GoalTreeNode):
     fact: str
 
 
+def geometric_mean(a, b):
+    return sqrt(a * b)
+
+
 def construct_dag(rules: dict[str, tuple[set[str], ...]]):
     dag = DAG()
     # 1. add all vertices
@@ -80,7 +86,7 @@ def construct_dag(rules: dict[str, tuple[set[str], ...]]):
     return dag
 
 
-def update_truth(dag: DAG, assertions: frozendict[str, bool]) -> DAG:
+def update_truth(dag: DAG, assertions: frozendict[str, Optional[bool]]) -> DAG:
     '''Using top-down recursion, recreate the DAG
     while evaluating each node's truth based on the given assertions,
     which match facts to their truth values.'''
@@ -131,34 +137,28 @@ def update_truth(dag: DAG, assertions: frozendict[str, bool]) -> DAG:
 
 
 def update_truth_with_groups(
-        dag: DAG, assertions: frozendict[str, bool],
+        dag: DAG, assertions: frozendict[str, Optional[bool]],
         exclusive_groups: tuple[set[str], ...] = tuple()):
     while True:
         new_dag = update_truth(dag, assertions)
-
         truths = dag_truths(new_dag)
-
         excluded_facts: list[str] = []
         for group in exclusive_groups:
             true_facts = [fact for fact in group if truths.get(fact) == True]
-            ic(true_facts)
             if not true_facts:
                 continue
             if len(true_facts) > 1:
                 raise ValueError(
                     "Only one fact from each exclusive group can be true.")
             match = true_facts[0]
-            ic(match)
-
-            excluded_facts.extend(ic(group - {match}))
+            excluded_facts.extend(group - {match})
         if not excluded_facts:
             break
-        ic(excluded_facts)
         old_truths = truths
         truths = truths | {f: False for f in excluded_facts}
         if old_truths == truths:
             break
-        assertions = truths
+        assertions = frozendict(truths)
     return new_dag
 
 
@@ -206,6 +206,25 @@ def update_pruned(dag: DAG) -> DAG:
     return new_dag
 
 
+def solution(dag: DAG) -> Optional[str]:
+    '''Returns None if solution is not yet known.
+    Returns the fact string if it is the only solution.
+    Otherwise, raises an error if there are multiple true roots,
+    or if all the roots are false.'''
+    true = [n.fact for n in dag.all_starts() if n.truth == True]
+    false = [n.fact for n in dag.all_starts() if n.truth == False]
+    unknown = [n.fact for n in dag.all_starts() if n.truth == None]
+    if len(true) == 1:
+        return true[0]
+    elif len(true) > 1:
+        raise ValueError("More than one hypothesis are true.")
+    elif len(false) == len(dag.all_starts()):
+        raise ValueError("More than one hypothesis are true.")
+    elif len(unknown) == 1:
+        return unknown[0]
+    return None
+
+
 @dataclass(frozen=True)
 class GoalTree:
     '''
@@ -222,15 +241,23 @@ class GoalTree:
     dag: DAG = field(init=False)
 
     def __post_init__(self):
+        if not isinstance(self.assertions, frozendict):
+            object.__setattr__(self, "assertions", frozendict(self.assertions))
+
         dag = construct_dag(self.rules)
         evaluated_dag = update_pruned(
             update_truth_with_groups(dag, self.assertions, self.exclusive_groups))
-        object.__setattr__(self, "dag", evaluated_dag)
+        guaranteed_assertions = update_guaranteed(evaluated_dag,
+                                                  self.assertions,
+                                                  self.exclusive_groups)
+        guaranteed_dag = update_pruned(
+            update_truth_with_groups(dag, guaranteed_assertions, self.exclusive_groups))
+        object.__setattr__(self, "dag", guaranteed_dag)
 
     def set(self, new_assertions: dict[str, bool]):
         return GoalTree(self.rules,
                         self.exclusive_groups,
-                        self.assertions | new_assertions)
+                        ic(self.assertions | new_assertions))
 
 
 def node_value(gt: GoalTree, node: FactNode) -> dict:
@@ -253,10 +280,68 @@ def node_value(gt: GoalTree, node: FactNode) -> dict:
         end = sum(1 for r in new_gt.dag.all_terminals() if r.pruned)
         return end-start
 
-    return {"roots_cut_if_false": roots_turned_false(gt_false),
-            "roots_cut_if_true": roots_turned_false(gt_true),
-            "leaved_pruned_if_false": leaves_pruned(gt_false),
-            "leaved_pruned_if_true": leaves_pruned(gt_true)}
+    rf = roots_turned_false(gt_false)
+    rt = roots_turned_false(gt_true)
+
+    # a geometric mean is higher than a regular mean when the values are closer together.
+    # we want questions that have a larger impact both when true and when false,
+    # otherwise the more specific questions will get a higher value.
+    # By adding 1 to each value, we ensure that the result is not 0 when either is 0
+    value = geometric_mean(rf+1, rt+1)
+
+    return {"value": value,
+            "roots_cut_if_false": rf,
+            "roots_cut_if_true": rt,
+            "leaves_pruned_if_false": leaves_pruned(gt_false),
+            "leaves_pruned_if_true": leaves_pruned(gt_true)}
+
+
+def update_guaranteed(
+        dag: DAG, assertions: frozendict[str, Optional[bool]],
+        exclusive_groups: tuple[set[str], ...] = tuple()
+) -> frozendict[str, Optional[bool]]:
+    '''Given a evaluated DAG, check if the truth of any leaves is guaranteed.
+    Return the augmented dict of assertions.
+
+    We make the assumption that one and only one root will be True,
+    therefore in some cases we can guarantee that a leaf can only be true or false.'''
+
+    # For performance, only proceed if there are few unknown roots
+    if sum(1 for x in dag.all_starts() if x.truth == None) > 3:
+        return assertions
+
+    updates: dict[str, bool] = {}
+    for leaf in dag.all_terminals():
+
+        dag_false = update_truth_with_groups(
+            dag, assertions.set(leaf.fact, False), exclusive_groups)
+        must_be_false = False
+        must_be_true = False
+
+        try:
+            # this line can fail because of exclusive groups (for some reason)
+            dag_true = update_truth_with_groups(
+                dag, assertions.set(leaf.fact, True), exclusive_groups)
+            try:
+                solution(dag_true)
+            except:
+                must_be_false = True
+        except ValueError:
+            pass
+        try:
+            solution(dag_false)
+        except ValueError:
+            must_be_true = True
+
+        if must_be_false and must_be_true:
+            raise ValueError(
+                f'Leaf {leaf} can\'t be set to either true or false.')
+        if must_be_true:
+            updates |= {leaf.fact: True}
+        if must_be_false:
+            updates |= {leaf.fact: False}
+
+    return assertions | updates
 
 
 def dag_truths(dag: DAG) -> dict[str, Optional[bool]]:
@@ -442,7 +527,7 @@ def test_update_truth_assertion_over_inferred():
 
 
 def test_update_truth_with_exclusive_groups():
-    rules = {"F": ({"A", "B", "C"},),
+    rules = {"F": ({"A", "B", "C"}, {"D"}),
              "A": ({"S"},)}
     assertions = {"S": True}
     exclusive_groups = ({"A", "B", "C"},)
@@ -450,7 +535,8 @@ def test_update_truth_with_exclusive_groups():
     dag = update_truth_with_groups(gt.dag, assertions, exclusive_groups)
     truths = dag_truths(dag)
 
-    assert truths == {"S": True, "A": True, "B": False, "C": False, "F": False}
+    assert truths == {"S": True, "A": True,
+                      "B": False, "C": False, "F": None, "D": None}
 
 
 def test_update_pruned_AND():
@@ -512,6 +598,58 @@ def test_GoalTree_class():
     updated_gt = gt.set({"B": True})
     assert FactNode("B", truth=True) in updated_gt.dag.vertices()
     assert FactNode("A", truth=True) in updated_gt.dag.vertices()
+
+
+def test_GoalTree_class():
+    rules = {"A": tuple(),
+             "B": tuple()}
+    gt = GoalTree(rules)
+    assert solution(gt.dag) == None
+
+    # simple case
+    gt2 = gt.set({"A": True})
+    assert solution(gt2.dag) == "A"
+
+    # raise if more than one true
+    gt3 = gt.set({"A": True, "B": True})
+    with pytest.raises(ValueError):
+        assert solution(gt3.dag)
+
+    # raise if all false
+    gt4 = gt.set({"A": False, "B": False})
+    with pytest.raises(ValueError):
+        assert solution(gt4.dag)
+
+    # last remaining unknown must be True
+    gt5 = gt.set({"A": False})
+    assert solution(gt5.dag) == "B"
+
+    rules = {"A": ({"F", "E"},),
+             "B": ({"F", "G"},)}
+    gt = GoalTree(rules)
+    assert solution(gt.dag) == None
+    gt = gt.set({"F": True})
+    assert solution(gt.dag) == None
+
+
+def test_update_guaranteed():
+    # in this example, F can't be false, so it must be true
+    rules = {"A": ({"F", "E"},),
+             "B": ({"F", "G"},)}
+    gt = GoalTree(rules)
+    new_assertions = update_guaranteed(
+        gt.dag, gt.assertions, gt.exclusive_groups)
+    new_gt = gt.set(new_assertions)
+    assert FactNode("F", truth=True) in new_gt.dag.all_terminals()
+
+    # in this example, F can't be true, so it must be false
+    rules = {"A": ({"F"}, {"C"}),
+             "B": ({"F"}, {"D"})}
+    gt = GoalTree(rules)
+    new_assertions = update_guaranteed(
+        gt.dag, gt.assertions, gt.exclusive_groups)
+    new_gt = gt.set(new_assertions)
+    assert FactNode("F", truth=False) in new_gt.dag.all_terminals()
 
 
 if __name__ == "__main__":
