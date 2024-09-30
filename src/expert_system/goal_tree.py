@@ -282,18 +282,20 @@ def node_value(gt: GoalTree, node: FactNode) -> dict:
 
     rf = roots_turned_false(gt_false)
     rt = roots_turned_false(gt_true)
-
+    lf = leaves_pruned(gt_false)
+    lt = leaves_pruned(gt_true)
     # a geometric mean is higher than a regular mean when the values are closer together.
     # we want questions that have a larger impact both when true and when false,
     # otherwise the more specific questions will get a higher value.
     # By adding 1 to each value, we ensure that the result is not 0 when either is 0
-    value = geometric_mean(rf+1, rt+1)
+    # value = geometric_mean(rf+1, rt+1)
+    value = 3 * geometric_mean(rf+1, rt+1) + 1 * geometric_mean(lf+1, lt+1)
 
     return {"value": value,
             "roots_cut_if_false": rf,
             "roots_cut_if_true": rt,
-            "leaves_pruned_if_false": leaves_pruned(gt_false),
-            "leaves_pruned_if_true": leaves_pruned(gt_true)}
+            "leaves_pruned_if_false": lf,
+            "leaves_pruned_if_true": lt}
 
 
 def update_guaranteed(

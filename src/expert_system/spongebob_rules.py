@@ -6,8 +6,7 @@ spongebob_rules = {
 
     "Squidward": ({'octopus', 'wears a brown t-shirt'},),
     "Squilliam": ({'octopus', 'has a thick monobrow'},),
-    "octopus": ({'has tentacles', 'has a narrow face but a wide forehead and mouth'},
-                {'has four legs', 'has tentacles'}),
+    "octopus": ({'doesn\'t have two legs', 'has a narrow face but a wide forehead and mouth'},),
 
     "starfish": ({'is coral-pink', 'has a cone-shaped head'},
                  {'is coral-pink', 'has red dots across its body'}),
@@ -26,15 +25,13 @@ spongebob_rules = {
     "lobster": ({'crustacean', 'has antennae'},),
     "Larry the Lobster": ({'lobster'},),
 
-    "plankton": ({'is green', 'has short, thin legs', 'has antennae'},
-                 {'has only one eye'}),
+    "plankton": ({'has only one eye', 'is green', 'has short, thin legs', 'has antennae'},),
     "Sheldon J. Plankton": ({'plankton', 'is completely naked'},),
     "Granny Plankton": ({'plankton', 'has wrinkles'},
                         {'plankton', 'is female'},
                         {'plankton', 'has hair'}),
 
-    "computer": ({"has a square head", "is not organic"},
-                 {"looks like a robot"}),
+    "computer": ({"has a square head", "doesn't have two legs"},),
     "Karen Plankton": ({'computer', 'has a green line on the monitor'},),
     "Karen 2.0": ({'computer', 'has a red line on the monitor'},
                   {'computer', 'has a slick body'})
