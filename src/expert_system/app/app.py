@@ -2,7 +2,7 @@ from flask import Flask, request, url_for, render_template, redirect, send_file
 from copy import deepcopy
 from dataclasses import replace
 
-from ..goal_tree import node_value, GoalTree
+from ..goal_tree import node_value, GoalTree, solution
 from ..draw_goal_tree import render_DAG
 from ..spongebob_rules import spongebob_rules, spongebob_exclusive_groups
 from ..DAG import DAG
@@ -45,6 +45,8 @@ def root_view():
     global gt
     render_DAG(gt.dag, dir='/tmp/expert_system', fn='diagram', format="svg")
 
+    if sol := solution(gt.dag):
+        return render_template("playground.html", solution=sol)
     facts = []
     for node in gt.dag.all_terminals():
         if node.truth is not None or node.pruned:

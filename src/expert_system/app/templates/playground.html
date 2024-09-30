@@ -40,15 +40,18 @@
     <button>Reset tree</button>
   </form>
 
+  {% if solution %}
+  <p>Answer: {{ solution }}</p>
+  {% endif %}
+
+  {% if facts %}
   <table border="1">
     <thead>
       <tr>
         <th>Fact</th>
-        {% if facts %}
         {% for part_label in facts[0][1].keys() %}
         <th>{{ part_label.replace('_', ' ') }}</th>
         {% endfor %}
-        {% endif %}
         <th>Answer</th>
       </tr>
     </thead>
@@ -74,6 +77,7 @@
       {% endfor %}
     </tbody>
   </table>
+  {% endif %}
 </div>
 
 <div class='right'>
