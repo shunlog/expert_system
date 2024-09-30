@@ -1,5 +1,8 @@
 <!doctype html>
 
+<script src="{{url_for('static', filename='svg-pan-zoom.min.js')}}"></script>
+
+
 <style>
   body, html {
       margin: 0;
@@ -15,18 +18,20 @@
   .left {
       flex: .6;
       padding: 10px;
-      border-right: solid black
+      border-right: solid black;
   }
 
   .right {
       flex: 1;
       display: flex;
       overflow-x: auto;
+      width: auto; /* Image won't scale */
+      max-height: 100%;
   }
 
-  .right img {
-      max-height: 100%;
-      width: auto;
+   .right img {
+       height: 100%;
+       width: auto;
   }
 </style>
 
@@ -72,6 +77,17 @@
 </div>
 
 <div class='right'>
-  <img src="{{url_for('send_diagram_file')}}">
+  <!-- <img  id='pannable' src="{{url_for('send_diagram_file')}}"> -->
+  
+  <embed type="image/svg+xml" src="{{url_for('send_diagram_file')}}" id="pannable"/>
+
 
 </div>
+
+<script>
+document.getElementById('pannable').addEventListener('load', function(){
+  // Will get called after embed element was loaded
+    svgPanZoom(document.getElementById('pannable'),
+               {zoomScaleSensitivity: 0.5});
+})
+</script>

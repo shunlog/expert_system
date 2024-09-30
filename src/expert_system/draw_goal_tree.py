@@ -43,7 +43,7 @@ def draw_DAG(dag: DAG, graph: graphviz.Digraph) -> None:
         draw_node(graph, dag, node)
 
 
-def render_DAG(dag: DAG, dir="out", fn="diagram"):
+def render_DAG(dag: DAG, dir="out", fn="diagram", format="png"):
     graph = graphviz.Digraph(strict=True)
     graph.attr(rankdir='RL')
 
@@ -51,5 +51,5 @@ def render_DAG(dag: DAG, dir="out", fn="diagram"):
 
     path = graph.render(directory=dir,
                         filename=fn,
-                        format="png")
+                        format=format)
     print(path)

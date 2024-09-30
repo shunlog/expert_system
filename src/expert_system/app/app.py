@@ -23,7 +23,7 @@ def set_fact_truth(fact: str, truth: bool):
 
 @app.route('/pic')
 def send_diagram_file():
-    return send_file('/tmp/expert_system/diagram.png')
+    return send_file('/tmp/expert_system/diagram.svg')
 
 
 @app.post('/reset')
@@ -43,7 +43,7 @@ def set_truth_view():
 @app.route("/")
 def root_view():
     global gt
-    render_DAG(gt.dag, dir='/tmp/expert_system', fn='diagram')
+    render_DAG(gt.dag, dir='/tmp/expert_system', fn='diagram', format="svg")
 
     facts = []
     for node in gt.dag.all_terminals():
