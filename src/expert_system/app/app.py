@@ -5,6 +5,7 @@ from dataclasses import replace
 from ..goal_tree import node_value, GoalTree, solution, encyclopedia_of_fact
 from ..draw_goal_tree import render_DAG
 from ..DAG import DAG
+from ..nlp import sentence_to_question
 
 from ..spongebob_rules import rules, exclusive_groups
 # from ..zoo_rules import rules, exclusive_groups
@@ -58,7 +59,8 @@ def akinator_view():
     if sol := solution(gt.dag):
         return render_template("akinator.html", solution=sol)
     fact = rated_facts()[0][0]
-    return render_template("akinator.html", fact=fact)
+    question = sentence_to_question(fact)
+    return render_template("akinator.html", question=question, fact=fact)
 
 
 @app.route("/playground")

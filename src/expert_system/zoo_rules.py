@@ -1,6 +1,6 @@
 
 rules = {"penguin": ({"bird", "swims"},),
-         "bird": ({"feathers"}, {"flies"}),
+         "bird": ({"flies"},),
          "albatross": ({"bird", "good flyer"},)}
 
 

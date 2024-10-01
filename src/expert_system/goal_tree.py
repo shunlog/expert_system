@@ -714,6 +714,10 @@ if __name__ == "__main__":
     assertions = frozendict({"is yellow": True})
     gt = GoalTree(rules)
 
-    for node in gt.dag.all_terminals():
-        v = node_value(gt, node)
-    ic(encyclopedia_of_fact(gt.dag, "Karen 2.0"))
+    # for node in gt.dag.all_terminals():
+    #     v = node_value(gt, node)
+
+    from .nlp import sentence_to_question
+    for leaf in gt.dag.all_terminals():
+        s = leaf.fact
+        print(s, "--->", sentence_to_question(s))
