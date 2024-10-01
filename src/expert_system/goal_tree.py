@@ -6,6 +6,7 @@ from functools import cache
 from frozendict import frozendict
 from math import sqrt
 import pytest
+from collections import OrderedDict
 
 from .DAG import DAG
 from .three_valued_logic import and3, or3
@@ -268,7 +269,7 @@ class GoalTree:
     def set(self, new_assertions: dict[str, bool]):
         return GoalTree(self.rules,
                         self.exclusive_groups,
-                        ic(self.assertions | new_assertions),
+                        self.assertions | new_assertions,
                         self.dag)
 
 
@@ -351,7 +352,6 @@ def update_guaranteed(
             updates |= {leaf.fact: True}
         if must_be_false:
             updates |= {leaf.fact: False}
-    ic(updates)
     return assertions | updates
 
 
@@ -359,6 +359,43 @@ def dag_truths(dag: DAG) -> dict[str, Optional[bool]]:
     """Given a Goal Tree DAG, return a dict mapping the facts to their truth value."""
     return {n.fact: n.truth
             for n in dag.vertices() if isinstance(n, FactNode)}
+
+
+def dag_backward_chain(dag: DAG, fact: str) -> OrderedDict[FactNode, None]:
+    '''Returns ordered dict of intermediary fact nodes.'''
+    children = OrderedDict()
+
+    def backward_chain(node):
+        if dag.outdegree(node) == 0:
+            return
+        if isinstance(node, FactNode):
+            children[node] = None
+        for child in dag.successors(node):
+            backward_chain(child)
+
+    node = next((n for n in dag.vertices() if isinstance(
+        n, FactNode) and n.fact == fact))
+    backward_chain(node)
+    return children
+
+
+def encyclopedia_of_fact(dag: DAG, fact: str):
+    '''Returns an HTML string describing the fact.'''
+    interm = dag_backward_chain(dag, fact)
+    s = '<dl>'
+    for node in interm.keys():
+        s += f'<dt> {node.fact} </dt>\n<dd><ul>\n'
+        for i, child in enumerate(dag.successors(node)):
+            s += '<li>\n'
+            if i != 0:
+                s += 'OR, '
+            if isinstance(child, AndNode):
+                s += ' AND '.join(n.fact for n in dag.successors(child))
+            else:
+                s += f'{child.fact}'
+            s += '</li>\n'
+        s += '</ul></dd>\n'
+    return s
 
 
 rules = {"penguin": ({"bird", "swims"},),
@@ -663,13 +700,20 @@ def test_update_guaranteed():
     assert FactNode("F", truth=False) in new_gt.dag.all_terminals()
 
 
+def test_backward():
+    rules = {"A": ({"F", "E"},),
+             "B": ({"F", "G"},)}
+    gt = GoalTree(rules)
+
+    assert dag_backward_chain(gt.dag, "A")
+
+
 if __name__ == "__main__":
-    from .spongebob_rules import spongebob_rules
+    from .spongebob_rules import rules
 
     assertions = frozendict({"is yellow": True})
-    gt = GoalTree(spongebob_rules)
+    gt = GoalTree(rules)
 
     for node in gt.dag.all_terminals():
-        ic(node)
         v = node_value(gt, node)
-        ic(v)
+    ic(encyclopedia_of_fact(gt.dag, "Karen 2.0"))

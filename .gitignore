@@ -164,3 +164,4 @@ cython_debug/
 
 static/*.svg
 static/diagram
+src/out

@@ -1,0 +1,5 @@
+{% for hypothesis in hypotheses %}
+<li>
+  <a href={{ url_for("encyclopedia_fact_view", fact=hypothesis) }}> {{ hypothesis }} </a>
+</li>
+{% endfor %}
