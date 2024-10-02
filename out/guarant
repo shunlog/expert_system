@@ -1,0 +1,21 @@
+strict digraph {
+	rankdir=RL
+	albatross [color=gold penwidth=2]
+	albatross0 [label="" shape=circle width=0.3 xlabel=AND]
+	albatross0
+	"good flyer"
+	albatross0 -> "good flyer"
+	bird
+	bird [fillcolor=palegreen2 style=filled]
+	albatross0 -> bird
+	albatross -> albatross0
+	penguin [color=gold penwidth=2]
+	penguin0 [label="" shape=circle width=0.3 xlabel=AND]
+	penguin0
+	swims
+	penguin0 -> swims
+	bird
+	bird [fillcolor=palegreen2 style=filled]
+	penguin0 -> bird
+	penguin -> penguin0
+}

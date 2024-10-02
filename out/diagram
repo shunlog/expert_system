@@ -1,0 +1,366 @@
+strict digraph {
+	rankdir=RL
+	"Mr. Krabs" [color=gold penwidth=2]
+	"Mr. Krabs0" [label="" shape=circle width=0.3 xlabel=AND]
+	"Mr. Krabs0"
+	"is male"
+	"Mr. Krabs0" -> "is male"
+	crab
+	crab0 [label="" shape=circle width=0.3 xlabel=AND]
+	crab0
+	crustacean
+	crustacean0 [label="" shape=circle width=0.3 xlabel=AND]
+	crustacean0
+	"is red"
+	crustacean0 -> "is red"
+	"has short, thin legs"
+	crustacean0 -> "has short, thin legs"
+	"has large pincers"
+	crustacean0 -> "has large pincers"
+	crustacean -> crustacean0
+	crab0 -> crustacean
+	"has extremely tall eyes"
+	crab0 -> "has extremely tall eyes"
+	crab -> crab0
+	"Mr. Krabs0" -> crab
+	"wears a suit"
+	"Mr. Krabs0" -> "wears a suit"
+	"Mr. Krabs" -> "Mr. Krabs0"
+	"Larry the Lobster" [color=gold penwidth=2]
+	"Larry the Lobster0" [label="" shape=circle width=0.3 xlabel=AND]
+	"Larry the Lobster0"
+	"is male"
+	"Larry the Lobster0" -> "is male"
+	lobster
+	lobster0 [label="" shape=circle width=0.3 xlabel=AND]
+	lobster0
+	crustacean
+	crustacean0 [label="" shape=circle width=0.3 xlabel=AND]
+	crustacean0
+	"is red"
+	crustacean0 -> "is red"
+	"has short, thin legs"
+	crustacean0 -> "has short, thin legs"
+	"has large pincers"
+	crustacean0 -> "has large pincers"
+	crustacean -> crustacean0
+	lobster0 -> crustacean
+	"has antennae"
+	lobster0 -> "has antennae"
+	lobster -> lobster0
+	"Larry the Lobster0" -> lobster
+	"Larry the Lobster" -> "Larry the Lobster0"
+	"Karen Plankton" [color=gold penwidth=2]
+	"Karen Plankton0" [label="" shape=circle width=0.3 xlabel=AND]
+	"Karen Plankton0"
+	"has a green line on the monitor"
+	"Karen Plankton0" -> "has a green line on the monitor"
+	computer
+	computer0 [label="" shape=circle width=0.3 xlabel=AND]
+	computer0
+	"has a square head"
+	computer0 -> "has a square head"
+	"doesn't have two legs"
+	computer0 -> "doesn't have two legs"
+	computer -> computer0
+	"Karen Plankton0" -> computer
+	"Karen Plankton" -> "Karen Plankton0"
+	"Redbeard Krabs" [color=gold penwidth=2]
+	"Redbeard Krabs0" [label="" shape=circle width=0.3 xlabel=AND]
+	"Redbeard Krabs0"
+	crab
+	crab0 [label="" shape=circle width=0.3 xlabel=AND]
+	crab0
+	crustacean
+	crustacean0 [label="" shape=circle width=0.3 xlabel=AND]
+	crustacean0
+	"is red"
+	crustacean0 -> "is red"
+	"has short, thin legs"
+	crustacean0 -> "has short, thin legs"
+	"has large pincers"
+	crustacean0 -> "has large pincers"
+	crustacean -> crustacean0
+	crab0 -> crustacean
+	"has extremely tall eyes"
+	crab0 -> "has extremely tall eyes"
+	crab -> crab0
+	"Redbeard Krabs0" -> crab
+	"has an eyepatch"
+	"Redbeard Krabs0" -> "has an eyepatch"
+	"has a beard"
+	"Redbeard Krabs0" -> "has a beard"
+	"Redbeard Krabs" -> "Redbeard Krabs0"
+	"Redbeard Krabs1" [label="" shape=circle width=0.3 xlabel=AND]
+	"Redbeard Krabs1"
+	crab
+	crab0 [label="" shape=circle width=0.3 xlabel=AND]
+	crab0
+	crustacean
+	crustacean0 [label="" shape=circle width=0.3 xlabel=AND]
+	crustacean0
+	"is red"
+	crustacean0 -> "is red"
+	"has short, thin legs"
+	crustacean0 -> "has short, thin legs"
+	"has large pincers"
+	crustacean0 -> "has large pincers"
+	crustacean -> crustacean0
+	crab0 -> crustacean
+	"has extremely tall eyes"
+	crab0 -> "has extremely tall eyes"
+	crab -> crab0
+	"Redbeard Krabs1" -> crab
+	"wears a stripped sailor shirt"
+	"Redbeard Krabs1" -> "wears a stripped sailor shirt"
+	"Redbeard Krabs" -> "Redbeard Krabs1"
+	"Margie Star" [color=gold penwidth=2]
+	"Margie Star0" [label="" shape=circle width=0.3 xlabel=AND]
+	"Margie Star0"
+	"is female"
+	"Margie Star0" -> "is female"
+	starfish
+	starfish1 [label="" shape=circle width=0.3 xlabel=AND]
+	starfish1
+	"has red dots across its body"
+	starfish1 -> "has red dots across its body"
+	"is coral-pink"
+	starfish1 -> "is coral-pink"
+	starfish -> starfish1
+	starfish0 [label="" shape=circle width=0.3 xlabel=AND]
+	starfish0
+	"is coral-pink"
+	starfish0 -> "is coral-pink"
+	"has a cone-shaped head"
+	starfish0 -> "has a cone-shaped head"
+	starfish -> starfish0
+	"Margie Star0" -> starfish
+	"has hair"
+	"Margie Star0" -> "has hair"
+	"Margie Star" -> "Margie Star0"
+	"Karen 2.0" [color=gold penwidth=2]
+	"Karen 2.00" [label="" shape=circle width=0.3 xlabel=AND]
+	"Karen 2.00"
+	"has a red line on the monitor"
+	"Karen 2.00" -> "has a red line on the monitor"
+	computer
+	computer0 [label="" shape=circle width=0.3 xlabel=AND]
+	computer0
+	"has a square head"
+	computer0 -> "has a square head"
+	"doesn't have two legs"
+	computer0 -> "doesn't have two legs"
+	computer -> computer0
+	"Karen 2.00" -> computer
+	"Karen 2.0" -> "Karen 2.00"
+	"Karen 2.01" [label="" shape=circle width=0.3 xlabel=AND]
+	"Karen 2.01"
+	"is female"
+	"Karen 2.01" -> "is female"
+	"has a slick body"
+	"Karen 2.01" -> "has a slick body"
+	computer
+	computer0 [label="" shape=circle width=0.3 xlabel=AND]
+	computer0
+	"has a square head"
+	computer0 -> "has a square head"
+	"doesn't have two legs"
+	computer0 -> "doesn't have two legs"
+	computer -> computer0
+	"Karen 2.01" -> computer
+	"Karen 2.0" -> "Karen 2.01"
+	Spongebob [color=gold penwidth=2]
+	Spongebob0 [label="" shape=circle width=0.3 xlabel=AND]
+	Spongebob0
+	"wears a suit"
+	Spongebob0 -> "wears a suit"
+	"has square pants"
+	Spongebob0 -> "has square pants"
+	sponge
+	sponge0 [label="" shape=circle width=0.3 xlabel=AND]
+	sponge0
+	"is yellow"
+	sponge0 -> "is yellow"
+	"has holes"
+	sponge0 -> "has holes"
+	sponge -> sponge0
+	Spongebob0 -> sponge
+	"is male"
+	Spongebob0 -> "is male"
+	"has a square head"
+	Spongebob0 -> "has a square head"
+	Spongebob -> Spongebob0
+	"Granny Plankton" [color=gold penwidth=2]
+	"Granny Plankton0" [label="" shape=circle width=0.3 xlabel=AND]
+	"Granny Plankton0"
+	"is female"
+	"Granny Plankton0" -> "is female"
+	plankton
+	plankton0 [label="" shape=circle width=0.3 xlabel=AND]
+	plankton0
+	"has only one eye"
+	plankton0 -> "has only one eye"
+	"is green"
+	plankton0 -> "is green"
+	"has short, thin legs"
+	plankton0 -> "has short, thin legs"
+	"has antennae"
+	plankton0 -> "has antennae"
+	plankton -> plankton0
+	"Granny Plankton0" -> plankton
+	"has wrinkles"
+	"Granny Plankton0" -> "has wrinkles"
+	"has hair"
+	"Granny Plankton0" -> "has hair"
+	"Granny Plankton" -> "Granny Plankton0"
+	"Sheldon J. Plankton" [color=gold penwidth=2]
+	"Sheldon J. Plankton0" [label="" shape=circle width=0.3 xlabel=AND]
+	"Sheldon J. Plankton0"
+	"is male"
+	"Sheldon J. Plankton0" -> "is male"
+	plankton
+	plankton0 [label="" shape=circle width=0.3 xlabel=AND]
+	plankton0
+	"has only one eye"
+	plankton0 -> "has only one eye"
+	"is green"
+	plankton0 -> "is green"
+	"has short, thin legs"
+	plankton0 -> "has short, thin legs"
+	"has antennae"
+	plankton0 -> "has antennae"
+	plankton -> plankton0
+	"Sheldon J. Plankton0" -> plankton
+	"is completely naked"
+	"Sheldon J. Plankton0" -> "is completely naked"
+	"Sheldon J. Plankton" -> "Sheldon J. Plankton0"
+	"Patrick Star" [color=gold penwidth=2]
+	"Patrick Star0" [label="" shape=circle width=0.3 xlabel=AND]
+	"Patrick Star0"
+	"is male"
+	"Patrick Star0" -> "is male"
+	starfish
+	starfish1 [label="" shape=circle width=0.3 xlabel=AND]
+	starfish1
+	"has red dots across its body"
+	starfish1 -> "has red dots across its body"
+	"is coral-pink"
+	starfish1 -> "is coral-pink"
+	starfish -> starfish1
+	starfish0 [label="" shape=circle width=0.3 xlabel=AND]
+	starfish0
+	"is coral-pink"
+	starfish0 -> "is coral-pink"
+	"has a cone-shaped head"
+	starfish0 -> "has a cone-shaped head"
+	starfish -> starfish0
+	"Patrick Star0" -> starfish
+	"wears only a pair of shorts"
+	"Patrick Star0" -> "wears only a pair of shorts"
+	"Patrick Star" -> "Patrick Star0"
+	Squilliam [color=gold penwidth=2]
+	Squilliam0 [label="" shape=circle width=0.3 xlabel=AND]
+	Squilliam0
+	"is male"
+	Squilliam0 -> "is male"
+	octopus
+	octopus0 [label="" shape=circle width=0.3 xlabel=AND]
+	octopus0
+	"doesn't have two legs"
+	octopus0 -> "doesn't have two legs"
+	"has a narrow face but a wide forehead and mouth"
+	octopus0 -> "has a narrow face but a wide forehead and mouth"
+	octopus -> octopus0
+	Squilliam0 -> octopus
+	"has a thick monobrow"
+	Squilliam0 -> "has a thick monobrow"
+	Squilliam -> Squilliam0
+	Stanley [color=gold penwidth=2]
+	Stanley0 [label="" shape=circle width=0.3 xlabel=AND]
+	Stanley0
+	"wears a suit"
+	Stanley0 -> "wears a suit"
+	sponge
+	sponge0 [label="" shape=circle width=0.3 xlabel=AND]
+	sponge0
+	"is yellow"
+	sponge0 -> "is yellow"
+	"has holes"
+	sponge0 -> "has holes"
+	sponge -> sponge0
+	Stanley0 -> sponge
+	"is male"
+	Stanley0 -> "is male"
+	"has tall body"
+	Stanley0 -> "has tall body"
+	"has a square head"
+	Stanley0 -> "has a square head"
+	Stanley -> Stanley0
+	"Herb Star" [color=gold penwidth=2]
+	"Herb Star0" [label="" shape=circle width=0.3 xlabel=AND]
+	"Herb Star0"
+	"is male"
+	"Herb Star0" -> "is male"
+	starfish
+	starfish1 [label="" shape=circle width=0.3 xlabel=AND]
+	starfish1
+	"has red dots across its body"
+	starfish1 -> "has red dots across its body"
+	"is coral-pink"
+	starfish1 -> "is coral-pink"
+	starfish -> starfish1
+	starfish0 [label="" shape=circle width=0.3 xlabel=AND]
+	starfish0
+	"is coral-pink"
+	starfish0 -> "is coral-pink"
+	"has a cone-shaped head"
+	starfish0 -> "has a cone-shaped head"
+	starfish -> starfish0
+	"Herb Star0" -> starfish
+	"has a beard"
+	"Herb Star0" -> "has a beard"
+	"Herb Star" -> "Herb Star0"
+	"Betsy Krabs" [color=gold penwidth=2]
+	"Betsy Krabs0" [label="" shape=circle width=0.3 xlabel=AND]
+	"Betsy Krabs0"
+	"is female"
+	"Betsy Krabs0" -> "is female"
+	crab
+	crab0 [label="" shape=circle width=0.3 xlabel=AND]
+	crab0
+	crustacean
+	crustacean0 [label="" shape=circle width=0.3 xlabel=AND]
+	crustacean0
+	"is red"
+	crustacean0 -> "is red"
+	"has short, thin legs"
+	crustacean0 -> "has short, thin legs"
+	"has large pincers"
+	crustacean0 -> "has large pincers"
+	crustacean -> crustacean0
+	crab0 -> crustacean
+	"has extremely tall eyes"
+	crab0 -> "has extremely tall eyes"
+	crab -> crab0
+	"Betsy Krabs0" -> crab
+	"has wrinkles"
+	"Betsy Krabs0" -> "has wrinkles"
+	"Betsy Krabs" -> "Betsy Krabs0"
+	Squidward [color=gold penwidth=2]
+	Squidward0 [label="" shape=circle width=0.3 xlabel=AND]
+	Squidward0
+	"is male"
+	Squidward0 -> "is male"
+	"wears a brown t-shirt"
+	Squidward0 -> "wears a brown t-shirt"
+	octopus
+	octopus0 [label="" shape=circle width=0.3 xlabel=AND]
+	octopus0
+	"doesn't have two legs"
+	octopus0 -> "doesn't have two legs"
+	"has a narrow face but a wide forehead and mouth"
+	octopus0 -> "has a narrow face but a wide forehead and mouth"
+	octopus -> octopus0
+	Squidward0 -> octopus
+	Squidward -> Squidward0
+}

@@ -1,0 +1,16 @@
+strict digraph {
+	rankdir=RL
+	tiger [color=gold penwidth=2]
+	"has claws"
+	tiger -> "has claws"
+	bird [color=gold penwidth=2]
+	bird0 [label="" shape=circle width=0.3 xlabel=AND]
+	bird0
+	"lays eggs"
+	bird0 -> "lays eggs"
+	"can fly"
+	bird0 -> "can fly"
+	bird -> bird0
+	"has feathers"
+	bird -> "has feathers"
+}
