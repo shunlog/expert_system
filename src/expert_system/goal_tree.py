@@ -140,6 +140,15 @@ def update_truth(dag: DAG, assertions: frozendict[str, Optional[bool]]) -> DAG:
 def update_truth_with_groups(
         dag: DAG, assertions: frozendict[str, Optional[bool]],
         exclusive_groups: tuple[set[str], ...] = tuple()):
+    '''A wrapper around the update_truth() function
+    which takes exclusive groups into account.
+
+    Works by repeatedly:
+    1) inferring new assertions using from the original assertions
+    and the list of exclusive_groups,
+    2) applying update_truth()
+    until the second step can't infer any new facts.
+    '''
     while True:
         new_dag = update_truth(dag, assertions)
         truths = dag_truths(new_dag)
@@ -243,6 +252,7 @@ class GoalTree:
     exclusive_groups: tuple[set[str], ...] = tuple()
     assertions: frozendict[str, bool] = frozendict()
     dag: DAG = None
+    check_guaranteed: bool = False
 
     def __post_init__(self):
         if not isinstance(self.assertions, frozendict):
@@ -256,8 +266,7 @@ class GoalTree:
         dag = update_pruned(
             update_truth_with_groups(dag, self.assertions, self.exclusive_groups))
 
-        # For performance, only proceed if there are few leaves to check
-        if sum(1 for x in dag.all_terminals() if x.truth == None) < 5:
+        if self.check_guaranteed:
             guaranteed_assertions = update_guaranteed(dag,
                                                       self.assertions,
                                                       self.exclusive_groups)

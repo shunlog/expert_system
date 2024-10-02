@@ -54,6 +54,7 @@ if __name__ == "__main__":
 
     assertions = frozendict({"is red": False,
                              "sponge": True})
+
     gt = GoalTree(rules, exclusive_groups, assertions)
 
     render_DAG(gt.dag)
