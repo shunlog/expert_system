@@ -1,0 +1,1537 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2024-10-02 Wed 19:44 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lab 1: "Expert (hopefully) systems", at FCIM.FIA</title>
+<meta name="author" content="Artiom Balan" />
+<meta name="generator" content="Org Mode" />
+<style>
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+<link rel="stylesheet" type="text/css" href="https://gongzhitaao.org/orgcss/org.css"/>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">Lab 1: "Expert (hopefully) systems", at FCIM.FIA</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#orgaeb1609">1. Task 1 &amp; 2: Goal tree</a>
+<ul>
+<li><a href="#org95ff2d7">1.1. Goal tree representation</a></li>
+<li><a href="#org9ee6247">1.2. My goal tree</a></li>
+</ul>
+</li>
+<li><a href="#orga37782d">2. Task 3: Forward chaining</a>
+<ul>
+<li><a href="#orgfe8f435">2.1. Modus ponens</a></li>
+<li><a href="#org65ae2ea">2.2. Pruning nodes</a></li>
+<li><a href="#orgd08989c">2.3. Exclusive groups</a></li>
+<li><a href="#org0f05fcc">2.4. Guaranteed facts</a></li>
+<li><a href="#org40730f7">2.5. Everything put together</a></li>
+</ul>
+</li>
+<li><a href="#org4be503a">3. Task 4: Backward chaining</a></li>
+<li><a href="#orgfa30be5">4. Task 5: Generating questions</a></li>
+<li><a href="#org3b8fd6a">5. Task 6: Wrap it up in an interactive system</a></li>
+<li><a href="#org96fc4e4">6. Task 7: human-readable questions</a></li>
+<li><a href="#org0a34792">7. Conclusion</a></li>
+<li><a href="#org39ca14b">8. Bibliography</a></li>
+</ul>
+</div>
+</div>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #5317ac;">from</span> frozendict <span style="color: #5317ac;">import</span> frozendict
+<span style="color: #5317ac;">from</span> expert_system.goal_tree <span style="color: #5317ac;">import</span> GoalTree
+<span style="color: #5317ac;">from</span> expert_system.draw_goal_tree <span style="color: #5317ac;">import</span> render_DAG
+<span style="color: #5317ac;">from</span> expert_system.spongebob_rules <span style="color: #5317ac;">import</span> rules
+<span style="color: #5317ac;">from</span> expert_system.nlp <span style="color: #5317ac;">import</span> sentence_to_question
+</pre>
+</div>
+
+<div id="outline-container-orgaeb1609" class="outline-2">
+<h2 id="orgaeb1609"><span class="section-number-2">1.</span> Task 1 &amp; 2: Goal tree</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+In the MIT lab, they used a list of lists to represent IF-THEN rules:
+</p>
+<div class="org-src-container">
+<pre class="src src-python">IF( AND( <span style="color: #2544bb;">'(?x) has feathers'</span> ),     <span style="color: #ee4000;"># </span><span style="color: #ee4000;">Z3</span>
+    THEN( <span style="color: #2544bb;">'(?x) is a bird'</span> )),
+
+IF( AND( <span style="color: #2544bb;">'(?x) flies'</span>,              <span style="color: #ee4000;"># </span><span style="color: #ee4000;">Z4</span>
+         <span style="color: #2544bb;">'(?x) lays eggs'</span> ),
+    THEN( <span style="color: #2544bb;">'(?x) is a bird'</span> )),
+</pre>
+</div>
+
+<p>
+For example, the following rules:
+</p>
+<pre class="example" id="org482238d">
+IF has feathers THEN bird;
+IF flies AND lays eggs THEN bird;
+</pre>
+
+<p>
+I chose a more idiomatic representation for the IF-THEN rules:
+a dictionary that maps facts to a list of sets
+where the elements of a set are AND-ed together.
+</p>
+
+<p>
+For example, the above rules are expressed in the following way:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #00538b;">example_rules</span> = {<span style="color: #2544bb;">"bird"</span>: ({<span style="color: #2544bb;">"can fly"</span>, <span style="color: #2544bb;">"lays eggs"</span>}, {<span style="color: #2544bb;">"has feathers"</span>}),
+                 <span style="color: #2544bb;">"tiger"</span>: ({<span style="color: #2544bb;">"has claws"</span>},)}
+</pre>
+</div>
+</div>
+
+
+<div id="outline-container-org95ff2d7" class="outline-3">
+<h3 id="org95ff2d7"><span class="section-number-3">1.1.</span> Goal tree representation</h3>
+<div class="outline-text-3" id="text-1-1">
+<p>
+I chose to represent the goal tree (aka "and-or tree")
+with a directed acyclic graph (DAG) data structure.
+A DAG is like a tree, but it can have multiple roots,
+and a node can have multiple parents.
+</p>
+
+<p>
+Note that we can't have arches in an and-or tree,
+so I decided to represent the AND operation using a separate node.
+Thus, there are two kinds of nodes in my representation: <b>Fact nodes</b> and <b>And nodes</b>.
+</p>
+
+<p>
+The rules are transformed into a DAG by constructing a <code>GoalTree</code> object like this:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #00538b;">example_gt</span> = GoalTree(example_rules)
+</pre>
+</div>
+
+<p>
+The <code>GoalTree</code> object contains the constructed DAG object in the <code>dag</code> field.
+There is a <code>DAG</code> class with a pretty simple interface:
+</p>
+<ul class="org-ul">
+<li><code>vertices()</code></li>
+<li><code>add_vertex(*vertices)</code></li>
+<li><code>add_edge(v_from, *v_to)</code></li>
+<li><code>remove_edge(v_from, v_to)</code></li>
+<li><code>vertex_size()</code></li>
+<li><code>edge_size()</code></li>
+<li><code>successors(vertex)</code></li>
+<li><code>predecessors(vertex)</code></li>
+<li><code>indegree(vertex)</code></li>
+<li><code>outdegree(vertex)</code></li>
+</ul>
+
+<p>
+You can draw the goal tree DAG using <code>render_DAG</code> which uses the <a href="https://graphviz.org/">graphviz</a> library:
+</p>
+<div class="org-src-container">
+<pre class="src src-python">render_DAG(example_gt.dag, fn=<span style="color: #2544bb;">"example"</span>)
+</pre>
+</div>
+
+
+<div id="org06cd910" class="figure">
+<p><img src="out/example.png" alt="example.png" />
+</p>
+</div>
+
+<p>
+An And node is drawn as a circle with the label "AND" below it,
+A Fact node is drawn as an ellipse with the fact string inside.
+</p>
+
+<p>
+Notice how the roots nodes (hypotheses) are on the right,
+whereas the leaf nodes (facts) are on the left.
+There arrows are pointing from the parents to the children, which is <a href="https://en.wikipedia.org/wiki/And%E2%80%93or_tree">the more common notation</a>.
+</p>
+
+<p>
+This diagram's interpretation is exactly the same as that of an and-or tree,
+with the addition that the truth of an And node is equal to the logical <code>AND</code> of the values of all its children.
+Conversely, the truth of a Fact node is equal to the logical <code>OR</code> of the values of all its children.
+</p>
+
+<p>
+A DAG with this interpretation is perfect for representing an A-or tree:
+</p>
+<ul class="org-ul">
+<li>it can have multiple hypotheses (roots)</li>
+<li>a fact can be present in multiple antecedents (multiple parents)</li>
+</ul>
+
+<p>
+The strings for the intermediate facts don't matter too much since the user doesn't see them,
+however the facts will be later transformed into questions according to specific rules,
+and they all have a similar forms: <code>PREDICATE + SUBJECT</code>, for example "has feathers".
+I decided not to use variables in the rules because they are unnecessary for this lab,
+since there is only ever a single subject.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org9ee6247" class="outline-3">
+<h3 id="org9ee6247"><span class="section-number-3">1.2.</span> My goal tree</h3>
+<div class="outline-text-3" id="text-1-2">
+<p>
+Here is how I defined the rules for identifying characters from the show "Spongebob Squarepants":
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #00538b;">spongebob_rules</span> = {
+    <span style="color: #2544bb;">"Spongebob"</span>: ({<span style="color: #2544bb;">"sponge"</span>, <span style="color: #2544bb;">"has a square head"</span>, <span style="color: #2544bb;">"has square pants"</span>,
+                   <span style="color: #2544bb;">'wears a suit'</span>, <span style="color: #2544bb;">'is male'</span>},),
+    <span style="color: #2544bb;">"Stanley"</span>: ({<span style="color: #2544bb;">"sponge"</span>, <span style="color: #2544bb;">"has a square head"</span>, <span style="color: #2544bb;">"has tall body"</span>,
+                 <span style="color: #2544bb;">'wears a suit'</span>, <span style="color: #2544bb;">'is male'</span>},),
+    <span style="color: #2544bb;">"sponge"</span>: ({<span style="color: #2544bb;">"is yellow"</span>, <span style="color: #2544bb;">"has holes"</span>},),
+
+    <span style="color: #2544bb;">"Squidward"</span>: ({<span style="color: #2544bb;">'octopus'</span>, <span style="color: #2544bb;">'wears a brown t-shirt'</span>, <span style="color: #2544bb;">'is male'</span>},),
+    <span style="color: #2544bb;">"Squilliam"</span>: ({<span style="color: #2544bb;">'octopus'</span>, <span style="color: #2544bb;">'has a thick monobrow'</span>, <span style="color: #2544bb;">'is male'</span>},),
+    <span style="color: #2544bb;">"octopus"</span>: ({<span style="color: #2544bb;">'doesn</span><span style="color: #0000c0;">\'</span><span style="color: #2544bb;">t have two legs'</span>, <span style="color: #2544bb;">'has a narrow face but a wide forehead and mouth'</span>},),
+
+    <span style="color: #2544bb;">"starfish"</span>: ({<span style="color: #2544bb;">'is coral-pink'</span>, <span style="color: #2544bb;">'has a cone-shaped head'</span>},
+                 {<span style="color: #2544bb;">'is coral-pink'</span>, <span style="color: #2544bb;">'has red dots across its body'</span>}),
+    <span style="color: #2544bb;">"Patrick Star"</span>: ({<span style="color: #2544bb;">'starfish'</span>, <span style="color: #2544bb;">'wears only a pair of shorts'</span>, <span style="color: #2544bb;">'is male'</span>},),
+    <span style="color: #2544bb;">"Margie Star"</span>: ({<span style="color: #2544bb;">'starfish'</span>, <span style="color: #2544bb;">'has hair'</span>, <span style="color: #2544bb;">'is female'</span>},),
+    <span style="color: #2544bb;">"Herb Star"</span>: ({<span style="color: #2544bb;">'starfish'</span>, <span style="color: #2544bb;">'has a beard'</span>, <span style="color: #2544bb;">'is male'</span>},),
+
+    <span style="color: #2544bb;">"crustacean"</span>: ({<span style="color: #2544bb;">'is red'</span>, <span style="color: #2544bb;">'has short, thin legs'</span>, <span style="color: #2544bb;">'has large pincers'</span>},),
+
+    <span style="color: #2544bb;">"crab"</span>: ({<span style="color: #2544bb;">'crustacean'</span>, <span style="color: #2544bb;">'has extremely tall eyes'</span>},),
+    <span style="color: #2544bb;">"Mr. Krabs"</span>: ({<span style="color: #2544bb;">'crab'</span>, <span style="color: #2544bb;">'wears a suit'</span>, <span style="color: #2544bb;">'is male'</span>},),
+    <span style="color: #2544bb;">"Betsy Krabs"</span>: ({<span style="color: #2544bb;">'crab'</span>, <span style="color: #2544bb;">'has wrinkles'</span>, <span style="color: #2544bb;">'is female'</span>},),
+    <span style="color: #2544bb;">"Redbeard Krabs"</span>: ({<span style="color: #2544bb;">'crab'</span>, <span style="color: #2544bb;">'has an eyepatch'</span>, <span style="color: #2544bb;">'has a beard'</span>},
+                       {<span style="color: #2544bb;">'crab'</span>, <span style="color: #2544bb;">'wears a stripped sailor shirt'</span>}),
+
+    <span style="color: #2544bb;">"lobster"</span>: ({<span style="color: #2544bb;">'crustacean'</span>, <span style="color: #2544bb;">'has antennae'</span>},),
+    <span style="color: #2544bb;">"Larry the Lobster"</span>: ({<span style="color: #2544bb;">'lobster'</span>, <span style="color: #2544bb;">'is male'</span>},),
+
+    <span style="color: #2544bb;">"plankton"</span>: ({<span style="color: #2544bb;">'has only one eye'</span>, <span style="color: #2544bb;">'is green'</span>, <span style="color: #2544bb;">'has short, thin legs'</span>,
+                  <span style="color: #2544bb;">'has antennae'</span>},),
+    <span style="color: #2544bb;">"Sheldon J. Plankton"</span>: ({<span style="color: #2544bb;">'plankton'</span>, <span style="color: #2544bb;">'is completely naked'</span>, <span style="color: #2544bb;">'is male'</span>},),
+    <span style="color: #2544bb;">"Granny Plankton"</span>: ({<span style="color: #2544bb;">'plankton'</span>, <span style="color: #2544bb;">'is female'</span>, <span style="color: #2544bb;">'has hair'</span>, <span style="color: #2544bb;">'has wrinkles'</span>},),
+
+    <span style="color: #2544bb;">"computer"</span>: ({<span style="color: #2544bb;">"has a square head"</span>, <span style="color: #2544bb;">"doesn't have two legs"</span>},),
+    <span style="color: #ee4000;"># </span><span style="color: #ee4000;">gender is ambiguous, LOL</span>
+    <span style="color: #2544bb;">"Karen Plankton"</span>: ({<span style="color: #2544bb;">'computer'</span>, <span style="color: #2544bb;">'has a green line on the monitor'</span>},),
+    <span style="color: #2544bb;">"Karen 2.0"</span>: ({<span style="color: #2544bb;">'computer'</span>, <span style="color: #2544bb;">'has a red line on the monitor'</span>},
+                  {<span style="color: #2544bb;">'computer'</span>, <span style="color: #2544bb;">'has a slick body'</span>, <span style="color: #2544bb;">'is female'</span>})
+}
+</pre>
+</div>
+
+<p>
+Here is the diagram representing the rules:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #00538b;">gt</span> = GoalTree(spongebob_rules)
+render_DAG(gt.dag)
+</pre>
+</div>
+
+
+<div id="orgee3f480" class="figure">
+<p><img src="out/diagram.png" alt="diagram.png" />
+</p>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orga37782d" class="outline-2">
+<h2 id="orga37782d"><span class="section-number-2">2.</span> Task 3: Forward chaining</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+Forward chaining means extracting new data from known data using inference rules.
+</p>
+
+<p>
+An expert system has a knowledge base and an inference engine.
+The knowledge base consists of two parts:
+</p>
+<ol class="org-ol">
+<li>Inference rules</li>
+<li>Facts</li>
+</ol>
+<p>
+As shown above, the DAG represents the inference rules as edges between vertices.
+But how do we represent the data?
+And what exactly <i>is</i> the data?
+</p>
+
+<p>
+In the MIT book on AI 1992, the facts in the expert system can only be tree.
+They don't even call them "true" but rather "satisfied".
+For this expert system though, we need the ability to say that some facts are false.
+And just for uniformity of the interface, I regard every statement in the goal tree as a fact
+which can have one of three truth states: true, false or unknown.
+Initially, all facts are unknown, and the user can assert that a fact is true or false.
+</p>
+
+<p>
+We could of course keep the facts data in a separate list,
+but I chose to combine it with the DAG
+by making every vertex keep track of its truth value.
+Thus, the DAG represents both the inference rules as well as the facts data.
+</p>
+</div>
+
+<div id="outline-container-orgfe8f435" class="outline-3">
+<h3 id="orgfe8f435"><span class="section-number-3">2.1.</span> Modus ponens</h3>
+<div class="outline-text-3" id="text-2-1">
+<p>
+The simplest method of doing forward chaining is by applying the IF-THEN rules directly:
+given the facts and the inference rules, if the antecedents are true, then we deduce that the consequent must also be true.
+Though, in our case with booleans, we say that a Fact node's truth value equals the <code>OR</code> of its children's values,
+and an And node's truth value equals the <code>AND</code> of its children's values.
+</p>
+
+<p>
+For example, let's take a simpler system:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #00538b;">zoo_rules</span> = {<span style="color: #2544bb;">"penguin"</span>: ({<span style="color: #2544bb;">"bird"</span>, <span style="color: #2544bb;">"doesn't fly"</span>},),
+         <span style="color: #2544bb;">"albatross"</span>: ({<span style="color: #2544bb;">"bird"</span>, <span style="color: #2544bb;">"good flier"</span>},),
+         <span style="color: #2544bb;">"bird"</span>: ({<span style="color: #2544bb;">"flies"</span>, <span style="color: #2544bb;">"lays eggs"</span>}, {<span style="color: #2544bb;">"has feathers"</span>})}
+<span style="color: #00538b;">zoo_gt</span> = GoalTree(zoo_rules)
+
+render_DAG(zoo_gt.dag, fn=<span style="color: #2544bb;">"zoo"</span>)
+</pre>
+</div>
+
+
+<div id="org3ec2359" class="figure">
+<p><img src="out/zoo.png" alt="zoo.png" />
+</p>
+</div>
+
+<p>
+I set the truth of facts by passing a <code>facts -&gt; boolean</code> dict to the <code>GoalTree.set()</code> method:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #00538b;">zoo_gt2</span> = zoo_gt.<span style="color: #8f0075;">set</span>({<span style="color: #2544bb;">"flies"</span>: <span style="color: #0000c0;">True</span>})
+render_DAG(zoo_gt2.dag, fn=<span style="color: #2544bb;">"zoo2"</span>)
+</pre>
+</div>
+
+
+<div id="org45e0501" class="figure">
+<p><img src="out/zoo2.png" alt="zoo2.png" />
+</p>
+</div>
+
+<p>
+As expected, the "flies" node became green, to represent that it's a true fact.
+Let's set it to false instead:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #00538b;">zoo_gt3</span> = zoo_gt.<span style="color: #8f0075;">set</span>({<span style="color: #2544bb;">"flies"</span>: <span style="color: #0000c0;">False</span>})
+render_DAG(zoo_gt3.dag, fn=<span style="color: #2544bb;">"zoo3"</span>)
+</pre>
+</div>
+
+
+<div id="org70b3a25" class="figure">
+<p><img src="out/zoo3.png" alt="zoo3.png" />
+</p>
+</div>
+
+<p>
+As you can see, along with the "flies" node, its parent And Node has also turned False.
+Intuitively, you can think that the truth value has "bubbled up" to the parents of the updated facts,
+updating them as well.
+</p>
+
+<p>
+Let's now set both "flies" <i>and</i> "has feathers" to false:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #00538b;">zoo_gt4</span> = zoo_gt.<span style="color: #8f0075;">set</span>({<span style="color: #2544bb;">"flies"</span>: <span style="color: #0000c0;">False</span>, <span style="color: #2544bb;">"has feathers"</span>: <span style="color: #0000c0;">False</span>})
+render_DAG(zoo_gt4.dag, fn=<span style="color: #2544bb;">"zoo4"</span>)
+</pre>
+</div>
+
+
+<div id="orgdc21a9f" class="figure">
+<p><img src="out/zoo4.png" alt="zoo4.png" />
+</p>
+</div>
+
+<p>
+This made the "bird" fact turn false, which in turn made both the hypotheses false.
+</p>
+
+<p>
+Let's try one more example:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #00538b;">zoo_gt5</span> = zoo_gt.<span style="color: #8f0075;">set</span>({<span style="color: #2544bb;">"doesn't fly"</span>: <span style="color: #0000c0;">True</span>, <span style="color: #2544bb;">"has feathers"</span>: <span style="color: #0000c0;">True</span>})
+render_DAG(zoo_gt5.dag, fn=<span style="color: #2544bb;">"zoo5"</span>)
+</pre>
+</div>
+
+
+<div id="orgf4403c6" class="figure">
+<p><img src="out/zoo5.png" alt="zoo5.png" />
+</p>
+</div>
+
+<p>
+Setting "doesn't fly" and "has feathers" to true was enough to infer that "penguin" is true.
+Thus, by doing <b>forward chaining</b> we can infer information about a node
+from the information available about its children nodes.
+</p>
+
+<p>
+Here is how I implemented this forward chaining method of inferring new data:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #5317ac;">def</span> <span style="color: #721045;">update_truth</span>(dag: DAG, assertions: frozendict[<span style="color: #8f0075;">str</span>, Optional[<span style="color: #8f0075;">bool</span>]]) -&gt; DAG:
+    <span style="color: #2a486a;">'''Using top-down recursion, recreate the DAG</span>
+<span style="color: #2a486a;">    while evaluating each node's truth based on the given assertions,</span>
+<span style="color: #2a486a;">    which match facts to their truth values.'''</span>
+    <span style="color: #00538b;">new_dag</span> = DAG()
+
+    <span style="color: #ee4000;"># </span><span style="color: #ee4000;">a FactNode can have multiple parents which will call add_node on it,</span>
+    <span style="color: #ee4000;"># </span><span style="color: #ee4000;">but the add_node function is idempotent, so we can cache it</span>
+    <span style="color: #005a5f;">@cache</span>
+    <span style="color: #5317ac;">def</span> <span style="color: #721045;">add_node</span>(node: GoalTreeNode) -&gt; GoalTreeNode:
+        <span style="color: #2a486a;">'''For a node in the old dag compute all the children recursively,</span>
+<span style="color: #2a486a;">        then compute the new node and add it to the new dag</span>
+<span style="color: #2a486a;">        together with the links to its new children'''</span>
+        new_node: GoalTreeNode
+
+        <span style="color: #ee4000;"># </span><span style="color: #ee4000;">base case: leaf node</span>
+        <span style="color: #5317ac;">if</span> dag.outdegree(node) == 0:
+            <span style="color: #5317ac;">assert</span> <span style="color: #8f0075;">isinstance</span>(node, FactNode)
+            <span style="color: #00538b;">fact</span> = node.fact
+            <span style="color: #00538b;">truth</span> = assertions.get(fact)
+            <span style="color: #00538b;">new_node</span> = FactNode(fact, truth=truth)
+            new_dag.add_vertex(new_node)
+            <span style="color: #5317ac;">return</span> new_node
+
+        <span style="color: #ee4000;"># </span><span style="color: #ee4000;">recursive case</span>
+        <span style="color: #00538b;">new_children</span> = [add_node(succ) <span style="color: #5317ac;">for</span> succ <span style="color: #5317ac;">in</span> dag.successors(node)]
+        <span style="color: #00538b;">children_truths</span> = [n.truth <span style="color: #5317ac;">for</span> n <span style="color: #5317ac;">in</span> new_children]
+        <span style="color: #5317ac;">if</span> <span style="color: #8f0075;">isinstance</span>(node, FactNode):
+            <span style="color: #5317ac;">if</span> (truth := assertions.get(node.fact)) <span style="color: #5317ac;">is</span> <span style="color: #0000c0;">None</span>:
+                <span style="color: #00538b;">truth</span> = or3(children_truths)
+            <span style="color: #00538b;">new_node</span> = FactNode(node.fact, truth=truth)
+        <span style="color: #5317ac;">else</span>:
+            <span style="color: #5317ac;">assert</span> <span style="color: #8f0075;">isinstance</span>(node, AndNode)
+            <span style="color: #00538b;">truth</span> = and3(children_truths)
+            <span style="color: #00538b;">new_node</span> = AndNode(node.parent_fact, node.<span style="color: #8f0075;">id</span>, truth=truth)
+
+        new_dag.add_vertex(new_node)
+        <span style="color: #5317ac;">for</span> new_child <span style="color: #5317ac;">in</span> new_children:
+            new_dag.add_edge(new_node, new_child)
+
+        <span style="color: #5317ac;">return</span> new_node
+
+    <span style="color: #5317ac;">for</span> root <span style="color: #5317ac;">in</span> dag.all_starts():
+        add_node(root)
+
+    <span style="color: #5317ac;">return</span> new_dag
+</pre>
+</div>
+
+<p>
+As the docstring says, I am constructing an entirely new DAG instance
+instead of updating the old one.
+This allows the function to be a bit more simple, at the cost of performance.
+</p>
+</div>
+</div>
+
+
+<div id="outline-container-org65ae2ea" class="outline-3">
+<h3 id="org65ae2ea"><span class="section-number-3">2.2.</span> Pruning nodes</h3>
+<div class="outline-text-3" id="text-2-2">
+<p>
+You might have noticed that the borders of some nodes are dotted lines.
+These are what I decided to call "pruned nodes".
+A node is pruned when its truth isn't known, but no matter which it is (true or false),
+it wouldn't impact the truth of its parents.
+As seen in the previous examples, a node is pruned when all its parents
+either have a known truth, or are pruned.
+</p>
+
+<p>
+We don't want the expert system to ask redundant questions,
+which is why it is important to detect all the pruned nodes and mark them as such.
+For this purpose, I decided that each vertex will hold along with its truth value,
+a flag indicating whether it's pruned or not.
+</p>
+
+<p>
+The function that updates the nodes in a DAG with information about their pruned state
+is very similar in principal to the previous one that updates their truth state,
+but in this case we do recursion from the leaves to the roots, rather than top-down:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #5317ac;">def</span> <span style="color: #721045;">update_pruned</span>(dag: DAG) -&gt; DAG:
+  <span style="color: #2a486a;">'''</span>
+<span style="color: #2a486a;">  Using bottom-up recursion, recreate the DAG</span>
+<span style="color: #2a486a;">  but with the pruned state of each node re-evaluated.</span>
+
+<span style="color: #2a486a;">  A node is "pruned" when we don't care to find out its truth value.</span>
+<span style="color: #2a486a;">  This is useful for minimizing the number of questions asked.</span>
+
+<span style="color: #2a486a;">  A node is pruned if each of its parents either:</span>
+<span style="color: #2a486a;">  1. has a known truth (not None)</span>
+<span style="color: #2a486a;">  2. is pruned</span>
+<span style="color: #2a486a;">  '''</span>
+  <span style="color: #00538b;">new_dag</span> = DAG()
+
+  <span style="color: #ee4000;"># </span><span style="color: #ee4000;">the add_node function is idempotent, so we can cache it</span>
+  <span style="color: #005a5f;">@cache</span>
+  <span style="color: #5317ac;">def</span> <span style="color: #721045;">add_node</span>(node: GoalTreeNode) -&gt; GoalTreeNode:
+      <span style="color: #2a486a;">'''For a node in the old dag, compute all the parents recursively,</span>
+<span style="color: #2a486a;">      then compute the new node and add it to the new dag</span>
+<span style="color: #2a486a;">      together with the links from its parents.'''</span>
+      new_node: GoalTreeNode
+      <span style="color: #ee4000;"># </span><span style="color: #ee4000;">base case: root node</span>
+      <span style="color: #5317ac;">if</span> dag.indegree(node) == 0:
+          new_dag.add_vertex(node)
+          <span style="color: #ee4000;"># </span><span style="color: #ee4000;">assuming root nodes can't be pruned</span>
+          <span style="color: #5317ac;">return</span> node
+      <span style="color: #ee4000;"># </span><span style="color: #ee4000;">recursive case</span>
+      <span style="color: #00538b;">new_parents</span> = [add_node(p) <span style="color: #5317ac;">for</span> p <span style="color: #5317ac;">in</span> dag.predecessors(node)]
+      <span style="color: #00538b;">pruned</span> = node.truth <span style="color: #5317ac;">is</span> <span style="color: #0000c0;">None</span> <span style="color: #5317ac;">and</span> <span style="color: #8f0075;">all</span>(
+          ((p.truth <span style="color: #5317ac;">is</span> <span style="color: #5317ac;">not</span> <span style="color: #0000c0;">None</span>) <span style="color: #5317ac;">or</span> p.pruned) <span style="color: #5317ac;">for</span> p <span style="color: #5317ac;">in</span> new_parents)
+      <span style="color: #00538b;">new_node</span> = replace(node, pruned=pruned)
+      new_dag.add_vertex(new_node)
+      <span style="color: #5317ac;">for</span> new_parent <span style="color: #5317ac;">in</span> new_parents:
+          new_dag.add_edge(new_parent, new_node)
+      <span style="color: #5317ac;">return</span> new_node
+
+  <span style="color: #5317ac;">for</span> leaf <span style="color: #5317ac;">in</span> dag.all_terminals():
+      add_node(leaf)
+
+  <span style="color: #5317ac;">return</span> new_dag
+</pre>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-orgd08989c" class="outline-3">
+<h3 id="orgd08989c"><span class="section-number-3">2.3.</span> Exclusive groups</h3>
+<div class="outline-text-3" id="text-2-3">
+<p>
+One thing I wanted to have in my rules was the ability to say that
+a set of facts are mutually exclusive, meaning at most one of the facts can be true.
+I decided to call these sets of mutually exclusive facts <b>exclusive groups</b>,
+for the lack of a better term <sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>.
+Some examples of exclusive groups are sets of colors and species.
+</p>
+
+<p>
+One obvious pair of mutually exclusive facts in the zoo example is "flies" and "doesn't fly".
+Let's specify this group, and try setting "flies" to true:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #00538b;">zoo_exclusive_groups</span> = ({<span style="color: #2544bb;">"doesn't fly"</span>, <span style="color: #2544bb;">"flies"</span>},)
+<span style="color: #00538b;">zoo_gt</span> = GoalTree(zoo_rules, zoo_exclusive_groups)
+<span style="color: #00538b;">zoo_gt1</span> = zoo_gt.<span style="color: #8f0075;">set</span>({<span style="color: #2544bb;">"flies"</span>: <span style="color: #0000c0;">True</span>})
+render_DAG(zoo_gt1.dag, fn=<span style="color: #2544bb;">"exc1"</span>)
+</pre>
+</div>
+
+
+<div id="orga1f40af" class="figure">
+<p><img src="out/exc1.png" alt="exc1.png" />
+</p>
+</div>
+
+<p>
+As you can see, setting "flies" to true automatically turned "doesn't fly" to false
+because they are in an exclusive group. This in turn bubbled up and "penguin" to false as well.
+</p>
+
+<p>
+Exclusive groups, which can be thought of as an extension of the NOT rule
+give us more power in expressing the rules in our expert system,
+but they also make it more difficult to see what's going on.
+One way to visualize exclusive groups
+would be to put all the facts belonging to the same exclusive group in a container.
+</p>
+
+<p>
+Here is how I implemented exclusive groups:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #5317ac;">def</span> <span style="color: #721045;">update_truth_with_groups</span>(
+        dag: DAG, assertions: frozendict[<span style="color: #8f0075;">str</span>, Optional[<span style="color: #8f0075;">bool</span>]],
+        exclusive_groups: <span style="color: #8f0075;">tuple</span>[<span style="color: #8f0075;">set</span>[<span style="color: #8f0075;">str</span>], ...] = <span style="color: #8f0075;">tuple</span>()):
+    <span style="color: #2a486a;">'''A wrapper around the update_truth() function</span>
+<span style="color: #2a486a;">    which takes exclusive groups into account.</span>
+
+<span style="color: #2a486a;">    Works by repeatedly:</span>
+<span style="color: #2a486a;">    1) inferring new assertions using from the original assertions</span>
+<span style="color: #2a486a;">    and the list of exclusive_groups,</span>
+<span style="color: #2a486a;">    2) applying update_truth()</span>
+<span style="color: #2a486a;">    until the second step can't infer any new facts.</span>
+<span style="color: #2a486a;">    '''</span>
+    <span style="color: #5317ac;">while</span> <span style="color: #0000c0;">True</span>:
+        <span style="color: #00538b;">new_dag</span> = update_truth(dag, assertions)
+        <span style="color: #00538b;">truths</span> = dag_truths(new_dag)
+        <span style="color: #00538b;">excluded_facts</span>: <span style="color: #8f0075;">list</span>[<span style="color: #8f0075;">str</span>] = []
+        <span style="color: #5317ac;">for</span> group <span style="color: #5317ac;">in</span> exclusive_groups:
+            <span style="color: #00538b;">true_facts</span> = [fact <span style="color: #5317ac;">for</span> fact <span style="color: #5317ac;">in</span> group <span style="color: #5317ac;">if</span> truths.get(fact) == <span style="color: #0000c0;">True</span>]
+            <span style="color: #5317ac;">if</span> <span style="color: #5317ac;">not</span> true_facts:
+                <span style="color: #5317ac;">continue</span>
+            <span style="color: #5317ac;">if</span> <span style="color: #8f0075;">len</span>(true_facts) &gt; 1:
+                <span style="color: #5317ac;">raise</span> <span style="color: #005a5f;">ValueError</span>(
+                    <span style="color: #2544bb;">"Only one fact from each exclusive group can be true."</span>)
+            <span style="color: #5317ac;">match</span> = true_facts[0]
+            excluded_facts.extend(group - {<span style="color: #5317ac;">match</span>})
+        <span style="color: #5317ac;">if</span> <span style="color: #5317ac;">not</span> excluded_facts:
+            <span style="color: #5317ac;">break</span>
+        <span style="color: #00538b;">old_truths</span> = truths
+        <span style="color: #00538b;">truths</span> = truths | {f: <span style="color: #0000c0;">False</span> <span style="color: #5317ac;">for</span> f <span style="color: #5317ac;">in</span> excluded_facts}
+        <span style="color: #5317ac;">if</span> old_truths == truths:
+            <span style="color: #5317ac;">break</span>
+        <span style="color: #00538b;">assertions</span> = frozendict(truths)
+        <span style="color: #5317ac;">return</span> new_dag
+</pre>
+</div>
+
+<p>
+This function is a wrapper around the <code>update_truth(dag, assertions)</code> function,
+meaning it calls that function, plus does the logic of applying exclusive groups on top of that.
+There might be a more efficient way to do this,
+maybe by modifying the recursive algorithm of <code>update_truth()</code> directly.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org0f05fcc" class="outline-3">
+<h3 id="org0f05fcc"><span class="section-number-3">2.4.</span> Guaranteed facts</h3>
+<div class="outline-text-3" id="text-2-4">
+<p>
+When Akinator can't guess who you're thinking about, he acknowledges that.
+For my expert system, however, I decided to make the assumption that the user will only think
+of a character that the system knows about.
+This allows the system to make assumptions about the truth of some facts in certain scenarios.
+</p>
+
+<p>
+Often when there are only a few hypotheses left, they will have many facts in common.
+For example, in the following scenario, both hypotheses depend on the fact "bird":
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #00538b;">rules</span> = {<span style="color: #2544bb;">"penguin"</span>: ({<span style="color: #2544bb;">"bird"</span>, <span style="color: #2544bb;">"swims"</span>},),
+
+         <span style="color: #2544bb;">"albatross"</span>: ({<span style="color: #2544bb;">"bird"</span>, <span style="color: #2544bb;">"good flyer"</span>},)}
+
+<span style="color: #00538b;">zoo_gtg</span> = GoalTree(rules, check_guaranteed=<span style="color: #0000c0;">True</span>)
+render_DAG(zoo_gtg.dag, fn=<span style="color: #2544bb;">"guarant"</span>)
+</pre>
+</div>
+
+
+<div id="orgcf66961" class="figure">
+<p><img src="out/guarant.png" alt="guarant.png" />
+</p>
+</div>
+
+<p>
+As you can see, the forward chaining algorithm had set the "bird" fact to true
+even though it was never specified by the user.
+The reason for this is that once you make the assumption that one hypothesis must be true,
+it follows that "bird" can't be false, because that would make all the hypotheses false.
+On the other hand, we can't say anything about "swims" for example:
+it might still be false if the solution is to be "albatross",
+or it might be true if the solution is to be "penguin".
+</p>
+
+<p>
+Depending on how the rules are specified, this can greatly reduce the number of questions
+that the system needs to ask until it can figure out a solution.
+</p>
+
+<p>
+An alternative to making the assumption that one and only one hypothesis is true
+and inferring from that the truth of some facts
+would be to only <i>prefer</i> facts that are not shared.
+If that could work, the system would probably be just as efficient
+but without making any assumptions about unknown facts.
+</p>
+
+<p>
+This feature is provided by the <code>update_guaranteed()</code> function:
+</p>
+<div class="org-src-container">
+<pre class="src src-python">  <span style="color: #5317ac;">def</span> <span style="color: #721045;">update_guaranteed</span>(
+        dag: DAG, assertions: frozendict[<span style="color: #8f0075;">str</span>, Optional[<span style="color: #8f0075;">bool</span>]],
+        exclusive_groups: <span style="color: #8f0075;">tuple</span>[<span style="color: #8f0075;">set</span>[<span style="color: #8f0075;">str</span>], ...] = <span style="color: #8f0075;">tuple</span>()
+) -&gt; frozendict[<span style="color: #8f0075;">str</span>, Optional[<span style="color: #8f0075;">bool</span>]]:
+    <span style="color: #2a486a;">'''Given a evaluated DAG, check if the truth of any leaves is guaranteed.</span>
+<span style="color: #2a486a;">    Return the augmented dict of assertions.</span>
+
+<span style="color: #2a486a;">    We make the assumption that one and only one root will be True,</span>
+<span style="color: #2a486a;">    therefore in some cases we can guarantee that a leaf can only be true or false.'''</span>
+
+    <span style="color: #00538b;">updates</span>: <span style="color: #8f0075;">dict</span>[<span style="color: #8f0075;">str</span>, <span style="color: #8f0075;">bool</span>] = {}
+    <span style="color: #5317ac;">for</span> leaf <span style="color: #5317ac;">in</span> dag.all_terminals():
+        <span style="color: #ee4000;"># </span><span style="color: #ee4000;">Ideally we would check all nodes, not just the leaves</span>
+        <span style="color: #ee4000;"># </span><span style="color: #ee4000;">but that's too slow with the current approach</span>
+        <span style="color: #00538b;">dag_false</span> = update_truth_with_groups(
+            dag, assertions.<span style="color: #8f0075;">set</span>(leaf.fact, <span style="color: #0000c0;">False</span>), exclusive_groups)
+        <span style="color: #00538b;">must_be_false</span> = <span style="color: #0000c0;">False</span>
+        <span style="color: #00538b;">must_be_true</span> = <span style="color: #0000c0;">False</span>
+
+        <span style="color: #5317ac;">try</span>:
+            <span style="color: #ee4000;"># </span><span style="color: #ee4000;">this line can fail because of exclusive groups (for some reason)</span>
+            <span style="color: #00538b;">dag_true</span> = update_truth_with_groups(
+                dag, assertions.<span style="color: #8f0075;">set</span>(leaf.fact, <span style="color: #0000c0;">True</span>), exclusive_groups)
+            <span style="color: #5317ac;">try</span>:
+                solution(dag_true)
+            <span style="color: #5317ac;">except</span> <span style="color: #005a5f;">ValueError</span>:
+                <span style="color: #00538b;">must_be_false</span> = <span style="color: #0000c0;">True</span>
+        <span style="color: #5317ac;">except</span> <span style="color: #005a5f;">ValueError</span>:
+            <span style="color: #5317ac;">pass</span>
+        <span style="color: #5317ac;">try</span>:
+            solution(dag_false)
+        <span style="color: #5317ac;">except</span> <span style="color: #005a5f;">ValueError</span>:
+            <span style="color: #00538b;">must_be_true</span> = <span style="color: #0000c0;">True</span>
+
+        <span style="color: #5317ac;">if</span> must_be_false <span style="color: #5317ac;">and</span> must_be_true:
+            <span style="color: #5317ac;">raise</span> <span style="color: #005a5f;">ValueError</span>(
+                f<span style="color: #2544bb;">'Leaf </span>{leaf}<span style="color: #2544bb;"> can</span><span style="color: #0000c0;">\'</span><span style="color: #2544bb;">t be set to either true or false.'</span>)
+        <span style="color: #5317ac;">if</span> must_be_true:
+            <span style="color: #00538b;">updates</span> |= {leaf.fact: <span style="color: #0000c0;">True</span>}
+        <span style="color: #5317ac;">if</span> must_be_false:
+            <span style="color: #00538b;">updates</span> |= {leaf.fact: <span style="color: #0000c0;">False</span>}
+            <span style="color: #5317ac;">return</span> assertions | updates
+</pre>
+</div>
+
+<p>
+This is a pretty inefficient algorithm,
+so much so that for the Spongebob rules it would take minutes to compute for every single node.
+That's why I had to hide it behind a flag, and still haven't put it in the final web app.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org40730f7" class="outline-3">
+<h3 id="org40730f7"><span class="section-number-3">2.5.</span> Everything put together</h3>
+<div class="outline-text-3" id="text-2-5">
+<p>
+In summmary, I have implemented the following mechanisms for forward chaining:
+</p>
+<ol class="org-ol">
+<li>Inference of node truth based on its children (<code>update_truth()</code>)</li>
+<li>Pruning (<code>update_pruned()</code>)</li>
+<li>Exclusive groups (<code>update_truth_with_groups()</code>)</li>
+<li>Guaranteed facts (<code>update_guaranteed()</code>)</li>
+</ol>
+
+<p>
+And these are the components that the inference engine uses:
+</p>
+<ol class="org-ol">
+<li>Rules</li>
+<li>DAG</li>
+<li>Assertions</li>
+<li>Exclusive groups</li>
+</ol>
+
+<p>
+I encapsulated the four components into a GoalTree class (for the lack of a better name):
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #005a5f;">@dataclass</span>(frozen=<span style="color: #0000c0;">True</span>)
+<span style="color: #5317ac;">class</span> <span style="color: #005a5f;">GoalTree</span>:
+    <span style="color: #2a486a;">'''</span>
+<span style="color: #2a486a;">    This is a helper class to keep the DAG together with the exclusive groups,</span>
+<span style="color: #2a486a;">    and to automatically updated it when the assertions are changed.</span>
+
+<span style="color: #2a486a;">    - dag: the DAG, evaluated using the assertions</span>
+<span style="color: #2a486a;">    - rules: representation of the if-then rules,</span>
+<span style="color: #2a486a;">        the mapping of facts to the and-sets</span>
+<span style="color: #2a486a;">    - exclusive_groups: list of sets of facts,</span>
+<span style="color: #2a486a;">        such that at most one element of each set can be true</span>
+<span style="color: #2a486a;">    - assertions: mapping of facts to their truth value</span>
+<span style="color: #2a486a;">    '''</span>
+    rules: <span style="color: #8f0075;">dict</span>[<span style="color: #8f0075;">str</span>, <span style="color: #8f0075;">tuple</span>[<span style="color: #8f0075;">set</span>[<span style="color: #8f0075;">str</span>], ...]]
+    <span style="color: #00538b;">exclusive_groups</span>: <span style="color: #8f0075;">tuple</span>[<span style="color: #8f0075;">set</span>[<span style="color: #8f0075;">str</span>], ...] = <span style="color: #8f0075;">tuple</span>()
+    <span style="color: #00538b;">assertions</span>: frozendict[<span style="color: #8f0075;">str</span>, <span style="color: #8f0075;">bool</span>] = frozendict()
+    <span style="color: #00538b;">dag</span>: DAG = <span style="color: #0000c0;">None</span>
+    <span style="color: #00538b;">check_guaranteed</span>: <span style="color: #8f0075;">bool</span> = <span style="color: #0000c0;">False</span>
+</pre>
+</div>
+
+<p>
+And the logic of applying all the four mechanisms is hidden inside the class constructor:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #5317ac;">def</span> <span style="color: #721045;">__post_init__</span>(<span style="color: #5317ac;">self</span>):
+    <span style="color: #5317ac;">if</span> <span style="color: #5317ac;">not</span> <span style="color: #8f0075;">isinstance</span>(<span style="color: #5317ac;">self</span>.assertions, frozendict):
+        <span style="color: #8f0075;">object</span>.__setattr__(<span style="color: #5317ac;">self</span>, <span style="color: #2544bb;">"assertions"</span>, frozendict(<span style="color: #5317ac;">self</span>.assertions))
+    <span style="color: #00538b;">dag</span> = <span style="color: #5317ac;">self</span>.dag
+    <span style="color: #5317ac;">if</span> <span style="color: #5317ac;">not</span> <span style="color: #5317ac;">self</span>.dag:
+        <span style="color: #ee4000;"># </span><span style="color: #ee4000;">don't reconstruct skeleton when simply updating the assertions</span>
+        <span style="color: #00538b;">dag</span> = construct_dag(<span style="color: #5317ac;">self</span>.rules)
+    <span style="color: #00538b;">dag</span> = update_pruned(
+        update_truth_with_groups(dag, <span style="color: #5317ac;">self</span>.assertions, <span style="color: #5317ac;">self</span>.exclusive_groups))
+    <span style="color: #5317ac;">if</span> <span style="color: #5317ac;">self</span>.check_guaranteed:
+        <span style="color: #00538b;">guaranteed_assertions</span> = update_guaranteed(dag,
+                                                  <span style="color: #5317ac;">self</span>.assertions,
+                                                  <span style="color: #5317ac;">self</span>.exclusive_groups)
+        <span style="color: #00538b;">dag</span> = update_pruned(
+            update_truth_with_groups(dag, guaranteed_assertions, <span style="color: #5317ac;">self</span>.exclusive_groups))
+    <span style="color: #8f0075;">object</span>.__setattr__(<span style="color: #5317ac;">self</span>, <span style="color: #2544bb;">"dag"</span>, dag)
+</pre>
+</div>
+
+<p>
+This class is extremely ugly and I hate it,
+but I didn't have time to figure out a better interface to wrap the whole logic in.
+Plus, as you have seen in all the previous examples, it does its job fine.
+</p>
+
+<p>
+for immutability's sake, the <code>set()</code> method simply constructs a new GoalTree which is
+automatically evaluated in the constructor.
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #5317ac;">def</span> <span style="color: #721045;">set</span>(<span style="color: #5317ac;">self</span>, new_assertions: <span style="color: #8f0075;">dict</span>[<span style="color: #8f0075;">str</span>, <span style="color: #8f0075;">bool</span>]):
+    <span style="color: #5317ac;">return</span> GoalTree(<span style="color: #5317ac;">self</span>.rules,
+                    <span style="color: #5317ac;">self</span>.exclusive_groups,
+                    <span style="color: #5317ac;">self</span>.assertions | new_assertions,
+                    <span style="color: #5317ac;">self</span>.dag)
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org4be503a" class="outline-2">
+<h2 id="org4be503a"><span class="section-number-2">3.</span> Task 4: Backward chaining</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+In the original MIT implementation, the backward chaining was rather complex
+because they used a list of rules to represent the goal tree.
+In my case, since I used an actual tree (a DAG to be precise),
+backward chaining is simply a matter of traversing the tree top-down.
+</p>
+
+<p>
+Backward chaining can apparently be used for multiple purposes:
+</p>
+<ul class="org-ul">
+<li>given a list of goals, figure out which of them are satisfied according to the inference rules and known facts</li>
+<li>given a goal, list all facts that need to be true for the goal to be satisfied</li>
+</ul>
+
+<p>
+In this lab we were tasked to implement the second kind, in the form of an "encyclopedia":
+</p>
+<ul class="org-ul">
+<li>given a goal, list its antecedents as a list of And-sets, like a definition</li>
+<li>do the same for every intermediate fact</li>
+</ul>
+
+<p>
+It's better to see an example.
+For the following goal tree:
+</p>
+
+<div id="org6f6c83d" class="figure">
+<p><img src="out/zoo.png" alt="zoo.png" />
+</p>
+</div>
+
+<p>
+The result of doing backward chaining on the goal "penguin" should look something like this:
+</p>
+<pre class="example" id="orge82fe10">
++ penguin:
+  - bird AND doesn't fly
++ bird:
+  - flies AND lays eggs
+  - OR, has feathers
+</pre>
+</div>
+</div>
+
+<div id="outline-container-orgfa30be5" class="outline-2">
+<h2 id="orgfa30be5"><span class="section-number-2">4.</span> Task 5: Generating questions</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+For the forward chaining mode, we want to build something like Akinator:
+a system that tries to infer a goal (root node) by asking the user yes or no questions about the basic facts (leaf nodes).
+</p>
+
+<p>
+The challenge lies in picking the right fact to ask about next
+in a way that minimizes the number of questions asked on average until the system deduces the answer.
+</p>
+
+<p>
+I've shown that my forward-chaining algorithm already does some optimization
+by detecting redundant facts (by pruning nodes and checking for guaranteed facts).
+We greatly minimize the number of questions just by not asking about these redundant facts.
+</p>
+
+<p>
+However, there is still work we can do to pick the best question out of the available ones.
+Consider the board game "Guess Who?". 
+The strategy is to ask questions that get maximally close to halving the remaining options
+both when answered with Yes or No.
+This strategy is a form of binary search.
+</p>
+
+<p>
+However, our expert system is a bit different than "Guess who"
+because not every fact is connected to every hypothesis.
+Therefore, the strategy is also a bit different.
+I won't be going into details,
+but for each question, we actually want to maximize the number of hypotheses turned false.
+Remember that only one hypothesis can be true,
+and that if there is only one unknown hypothesis left, then we can assume it is true.
+</p>
+
+<p>
+I wrote an ad-hoc function that gives a value to a node based on how many roots it invalidates on average,
+as well as how many leaves it prunes on average:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #5317ac;">def</span> <span style="color: #721045;">node_value</span>(gt: GoalTree, node: FactNode) -&gt; <span style="color: #8f0075;">dict</span>:
+    <span style="color: #2a486a;">'''</span>
+<span style="color: #2a486a;">    Computes the parameters that define the questioning value of a node.</span>
+<span style="color: #2a486a;">    '''</span>
+    <span style="color: #ee4000;"># </span><span style="color: #ee4000;">goal tree if node is true</span>
+    <span style="color: #00538b;">gt_true</span> = gt.<span style="color: #8f0075;">set</span>({node.fact: <span style="color: #0000c0;">True</span>})
+
+    <span style="color: #ee4000;"># </span><span style="color: #ee4000;">goal tree if node is false</span>
+    <span style="color: #00538b;">gt_false</span> = gt.<span style="color: #8f0075;">set</span>({node.fact: <span style="color: #0000c0;">False</span>})
+
+    <span style="color: #5317ac;">def</span> <span style="color: #721045;">roots_turned_false</span>(new_gt):
+        <span style="color: #00538b;">start</span> = <span style="color: #8f0075;">sum</span>(1 <span style="color: #5317ac;">for</span> r <span style="color: #5317ac;">in</span> gt.dag.all_starts() <span style="color: #5317ac;">if</span> r.truth == <span style="color: #0000c0;">False</span>)
+        <span style="color: #00538b;">end</span> = <span style="color: #8f0075;">sum</span>(1 <span style="color: #5317ac;">for</span> r <span style="color: #5317ac;">in</span> new_gt.dag.all_starts() <span style="color: #5317ac;">if</span> r.truth == <span style="color: #0000c0;">False</span>)
+        <span style="color: #5317ac;">return</span> end-start
+
+    <span style="color: #5317ac;">def</span> <span style="color: #721045;">leaves_pruned</span>(new_gt):
+        <span style="color: #00538b;">start</span> = <span style="color: #8f0075;">sum</span>(1 <span style="color: #5317ac;">for</span> r <span style="color: #5317ac;">in</span> gt.dag.all_terminals() <span style="color: #5317ac;">if</span> r.pruned)
+        <span style="color: #00538b;">end</span> = <span style="color: #8f0075;">sum</span>(1 <span style="color: #5317ac;">for</span> r <span style="color: #5317ac;">in</span> new_gt.dag.all_terminals() <span style="color: #5317ac;">if</span> r.pruned)
+        <span style="color: #5317ac;">return</span> end-start
+
+    <span style="color: #00538b;">rf</span> = roots_turned_false(gt_false)
+    <span style="color: #00538b;">rt</span> = roots_turned_false(gt_true)
+    <span style="color: #00538b;">lf</span> = leaves_pruned(gt_false)
+    <span style="color: #00538b;">lt</span> = leaves_pruned(gt_true)
+    <span style="color: #ee4000;"># </span><span style="color: #ee4000;">a geometric mean is higher than a regular mean when the values are closer together.</span>
+    <span style="color: #ee4000;"># </span><span style="color: #ee4000;">we want questions that have a larger impact both when true and when false,</span>
+    <span style="color: #ee4000;"># </span><span style="color: #ee4000;">otherwise the more specific questions will get a higher value.</span>
+    <span style="color: #ee4000;"># </span><span style="color: #ee4000;">By adding 1 to each value, we ensure that the result is not 0 when either is 0</span>
+    <span style="color: #ee4000;"># </span><span style="color: #ee4000;">value = geometric_mean(rf+1, rt+1)</span>
+    <span style="color: #00538b;">value</span> = 3 * geometric_mean(rf+1, rt+1) + 1 * geometric_mean(lf+1, lt+1)
+
+    <span style="color: #5317ac;">return</span> {<span style="color: #2544bb;">"value"</span>: value,
+            <span style="color: #2544bb;">"roots_cut_if_false"</span>: rf,
+            <span style="color: #2544bb;">"roots_cut_if_true"</span>: rt,
+            <span style="color: #2544bb;">"leaves_pruned_if_false"</span>: lf,
+            <span style="color: #2544bb;">"leaves_pruned_if_true"</span>: lt}
+</pre>
+</div>
+
+<p>
+I print the value together with its components in a table in the web interface,
+which looks like this:
+<img src="./img/values.png" alt="values.png" />
+</p>
+
+<p>
+The higher the value is, the better,
+so the items are sorted in decreasing order
+with the top one being highlighted in yellow.
+</p>
+
+<p>
+Unfortunately, I didn't have time to implement multiple-choice questions and another kind of question.
+However, I have an idea of how to implement single-choice questions based on my exclusive groups feature:
+every time the system wants to ask one of the facts in an exclusive group,
+it should instead prompt the user with all the items in the group and let him pick one or none.
+For example:
+</p>
+<pre class="example" id="org18cc532">
+Which of these is true:
+- It is red
+- It is green
+- It is blue
+- None is true
+</pre>
+<p>
+And once an option is picked, it should be set to true, while all the rest will be automatically set to false.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org3b8fd6a" class="outline-2">
+<h2 id="org3b8fd6a"><span class="section-number-2">5.</span> Task 6: Wrap it up in an interactive system</h2>
+<div class="outline-text-2" id="text-5">
+<p>
+I chose to make a web interface for the app because the app is simple enough to get away with
+simple forms for data submission, so I don't need any JS.
+</p>
+
+<p>
+The entry point of the app is simply a list of available modes:
+</p>
+
+
+<div id="org230a74d" class="figure">
+<p><img src="./img/home.png" alt="home.png" />
+</p>
+</div>
+
+<p>
+The forward-chaining mode (termed "Akinator mode") simply presents the user
+with the question and two buttons:
+</p>
+
+
+<div id="orgc497ce8" class="figure">
+<p><img src="./img/akinator.png" alt="akinator.png" />
+</p>
+</div>
+
+<p>
+The backward-chaining mode (termed "Encyclopedia mode") first lets the user pick a hypothesis to be described:
+</p>
+
+
+<div id="orgd1041b3" class="figure">
+<p><img src="./img/enc_list.png" alt="enc_list.png" />
+</p>
+</div>
+
+<p>
+Clicking on "Mr. Krabs" for example generates this list of definitions:
+</p>
+
+
+<div id="org8b1a0e6" class="figure">
+<p><img src="./img/krabs.png" alt="krabs.png" />
+</p>
+</div>
+
+<p>
+And finally, I added a "Playground" mode which is synced with the Akinator state
+and presents a lot of useful features:
+</p>
+<ul class="org-ul">
+<li>shows the node values</li>
+<li>a pannable diagram with the current state of the goal tree</li>
+<li>ability to answer any question, not necessarily the top one</li>
+<li>button to reset the game</li>
+</ul>
+
+
+<div id="org0bbd705" class="figure">
+<p><img src="./img/playground.png" alt="playground.png" />
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org96fc4e4" class="outline-2">
+<h2 id="org96fc4e4"><span class="section-number-2">6.</span> Task 7: human-readable questions</h2>
+<div class="outline-text-2" id="text-6">
+<p>
+Transforming statements into questions was surprisingly easy for the kind of statements I had in the rules
+since they all had one of these four forms:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Statement</th>
+<th scope="col" class="org-left">Question</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>it is ...</code></td>
+<td class="org-left"><code>is it ...?</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>it has ...</code></td>
+<td class="org-left"><code>does it have ...?</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>it &lt;verb that ends with "s"&gt; ...</code></td>
+<td class="org-left"><code>does it &lt;verb without the "s"&gt; ...?</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>it doesn't ...</code></td>
+<td class="org-left"><code>does it not ...?</code></td>
+</tr>
+</tbody>
+</table>
+
+
+<p>
+I couldn't come up with any other forms of statements,
+so I decided that a function that will work for all my facts would be good enough.
+Here it is:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #5317ac;">def</span> <span style="color: #721045;">sentence_to_question</span>(sentence: <span style="color: #8f0075;">str</span>) -&gt; <span style="color: #8f0075;">str</span>:
+  <span style="color: #2a486a;">'''Converts a statement into a question. The statement must have one of these 4 forms:</span>
+<span style="color: #2a486a;">  ...'''</span>
+  <span style="color: #00538b;">words</span> = sentence.split()
+  <span style="color: #5317ac;">if</span> <span style="color: #8f0075;">len</span>(words) &lt; 2:
+      <span style="color: #5317ac;">return</span> sentence  <span style="color: #ee4000;"># </span><span style="color: #ee4000;">Not a valid sentence for conversion</span>
+  <span style="color: #00538b;">subject</span> = <span style="color: #2544bb;">"it"</span>
+  <span style="color: #00538b;">verb</span> = words[0]
+  <span style="color: #00538b;">rest</span> = <span style="color: #2544bb;">" "</span>.join(words[1:])
+  <span style="color: #5317ac;">if</span> verb == <span style="color: #2544bb;">"is"</span>:
+      <span style="color: #5317ac;">return</span> f<span style="color: #2544bb;">"Is </span>{subject}<span style="color: #2544bb;"> </span>{rest}<span style="color: #2544bb;">?"</span>
+  <span style="color: #5317ac;">elif</span> verb == <span style="color: #2544bb;">"has"</span>:
+      <span style="color: #5317ac;">return</span> f<span style="color: #2544bb;">"Does </span>{subject}<span style="color: #2544bb;"> have </span>{rest}<span style="color: #2544bb;">?"</span>
+  <span style="color: #5317ac;">elif</span> verb == <span style="color: #2544bb;">"doesn't"</span>:
+      <span style="color: #5317ac;">return</span> f<span style="color: #2544bb;">"Does </span>{subject}<span style="color: #2544bb;"> not </span>{rest}<span style="color: #2544bb;">?"</span>
+  <span style="color: #5317ac;">elif</span> verb.endswith(<span style="color: #2544bb;">"s"</span>):
+      <span style="color: #5317ac;">return</span> f<span style="color: #2544bb;">"Does </span>{subject}<span style="color: #2544bb;"> </span>{verb[:-1]}<span style="color: #2544bb;"> </span>{rest}<span style="color: #2544bb;">?"</span>
+  <span style="color: #5317ac;">return</span> sentence  <span style="color: #ee4000;"># </span><span style="color: #ee4000;">couldn't convert, doesn't match any known form</span>
+</pre>
+</div>
+
+<p>
+And here is a table, with the facts on the left and their question form on the right:
+</p>
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #00538b;">hypotheses</span> =  [n.fact <span style="color: #5317ac;">for</span> n <span style="color: #5317ac;">in</span> gt.dag.all_terminals()]
+[(h, sentence_to_question(h)) <span style="color: #5317ac;">for</span> h <span style="color: #5317ac;">in</span> hypotheses]
+</pre>
+</div>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">is male</td>
+<td class="org-left">Is it male?</td>
+</tr>
+
+<tr>
+<td class="org-left">wears a brown t-shirt</td>
+<td class="org-left">Does it wear a brown t-shirt?</td>
+</tr>
+
+<tr>
+<td class="org-left">has short, thin legs</td>
+<td class="org-left">Does it have short, thin legs?</td>
+</tr>
+
+<tr>
+<td class="org-left">has extremely tall eyes</td>
+<td class="org-left">Does it have extremely tall eyes?</td>
+</tr>
+
+<tr>
+<td class="org-left">has a thick monobrow</td>
+<td class="org-left">Does it have a thick monobrow?</td>
+</tr>
+
+<tr>
+<td class="org-left">is female</td>
+<td class="org-left">Is it female?</td>
+</tr>
+
+<tr>
+<td class="org-left">has a square head</td>
+<td class="org-left">Does it have a square head?</td>
+</tr>
+
+<tr>
+<td class="org-left">has antennae</td>
+<td class="org-left">Does it have antennae?</td>
+</tr>
+
+<tr>
+<td class="org-left">has a beard</td>
+<td class="org-left">Does it have a beard?</td>
+</tr>
+
+<tr>
+<td class="org-left">has a narrow face but a wide forehead and mouth</td>
+<td class="org-left">Does it have a narrow face but a wide forehead and mouth?</td>
+</tr>
+
+<tr>
+<td class="org-left">is red</td>
+<td class="org-left">Is it red?</td>
+</tr>
+
+<tr>
+<td class="org-left">wears a stripped sailor shirt</td>
+<td class="org-left">Does it wear a stripped sailor shirt?</td>
+</tr>
+
+<tr>
+<td class="org-left">has square pants</td>
+<td class="org-left">Does it have square pants?</td>
+</tr>
+
+<tr>
+<td class="org-left">has a red line on the monitor</td>
+<td class="org-left">Does it have a red line on the monitor?</td>
+</tr>
+
+<tr>
+<td class="org-left">has large pincers</td>
+<td class="org-left">Does it have large pincers?</td>
+</tr>
+
+<tr>
+<td class="org-left">is completely naked</td>
+<td class="org-left">Is it completely naked?</td>
+</tr>
+
+<tr>
+<td class="org-left">has a cone-shaped head</td>
+<td class="org-left">Does it have a cone-shaped head?</td>
+</tr>
+
+<tr>
+<td class="org-left">is coral-pink</td>
+<td class="org-left">Is it coral-pink?</td>
+</tr>
+
+<tr>
+<td class="org-left">is yellow</td>
+<td class="org-left">Is it yellow?</td>
+</tr>
+
+<tr>
+<td class="org-left">has holes</td>
+<td class="org-left">Does it have holes?</td>
+</tr>
+
+<tr>
+<td class="org-left">has an eyepatch</td>
+<td class="org-left">Does it have an eyepatch?</td>
+</tr>
+
+<tr>
+<td class="org-left">has hair</td>
+<td class="org-left">Does it have hair?</td>
+</tr>
+
+<tr>
+<td class="org-left">has tall body</td>
+<td class="org-left">Does it have tall body?</td>
+</tr>
+
+<tr>
+<td class="org-left">wears only a pair of shorts</td>
+<td class="org-left">Does it wear only a pair of shorts?</td>
+</tr>
+
+<tr>
+<td class="org-left">doesn't have two legs</td>
+<td class="org-left">Does it not have two legs?</td>
+</tr>
+
+<tr>
+<td class="org-left">wears a suit</td>
+<td class="org-left">Does it wear a suit?</td>
+</tr>
+
+<tr>
+<td class="org-left">has a green line on the monitor</td>
+<td class="org-left">Does it have a green line on the monitor?</td>
+</tr>
+
+<tr>
+<td class="org-left">has only one eye</td>
+<td class="org-left">Does it have only one eye?</td>
+</tr>
+
+<tr>
+<td class="org-left">is green</td>
+<td class="org-left">Is it green?</td>
+</tr>
+
+<tr>
+<td class="org-left">has a slick body</td>
+<td class="org-left">Does it have a slick body?</td>
+</tr>
+
+<tr>
+<td class="org-left">has red dots across its body</td>
+<td class="org-left">Does it have red dots across its body?</td>
+</tr>
+
+<tr>
+<td class="org-left">has wrinkles</td>
+<td class="org-left">Does it have wrinkles?</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div id="outline-container-org0a34792" class="outline-2">
+<h2 id="org0a34792"><span class="section-number-2">7.</span> Conclusion</h2>
+<div class="outline-text-2" id="text-7">
+<p>
+This lab was initially taken from the MIT AI,
+but the requirements were so different from the original ones
+that the goal changed from a implementing a simple inference engine
+to implementing a full-fledged Akinator.
+</p>
+
+<p>
+It was quite fun, but the scope of the requirements was a bit too large in my opinion,
+judging by how much time it took me to accomplish (and I haven't even finished it yet).
+</p>
+</div>
+</div>
+
+<div id="outline-container-org39ca14b" class="outline-2">
+<h2 id="org39ca14b"><span class="section-number-2">8.</span> Bibliography</h2>
+<div class="outline-text-2" id="text-8">
+<p>
+[1] Winston, Patrick Henry, <i>Artificial intelligence</i>, Addison-Wesley Longman Publishing Co., Inc., 1992.</p>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+I did spend some time researching and-or trees and expert systems online,
+but I couldn't find anything of the sort of "exclusive groups".
+However, I thought it would be more interesting to try and come up with something by myself
+rather than find the theory worked out already.
+I guess they could be represented with a bunch of <code>NOT</code> clauses.
+</p></div></div>
+
+
+</div>
+</div></div>
+<div id="postamble" class="status">
+<p class="author">Author: Artiom Balan</p>
+<p class="date">Created: 2024-10-02 Wed 19:44</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>

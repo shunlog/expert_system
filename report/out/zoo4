@@ -1,0 +1,49 @@
+strict digraph {
+	rankdir=RL
+	albatross [color=gold penwidth=2]
+	albatross [fillcolor=lightpink1 style=filled]
+	albatross0 [label="" shape=circle width=0.3 xlabel=AND]
+	albatross0
+	albatross0 [fillcolor=lightpink1 style=filled]
+	bird
+	bird [fillcolor=lightpink1 style=filled]
+	bird0 [label="" shape=circle width=0.3 xlabel=AND]
+	bird0
+	bird0 [fillcolor=lightpink1 style=filled]
+	"lays eggs" [style=dotted]
+	bird0 -> "lays eggs"
+	flies
+	flies [fillcolor=lightpink1 style=filled]
+	bird0 -> flies
+	bird -> bird0
+	"has feathers"
+	"has feathers" [fillcolor=lightpink1 style=filled]
+	bird -> "has feathers"
+	albatross0 -> bird
+	"good flier" [style=dotted]
+	albatross0 -> "good flier"
+	albatross -> albatross0
+	penguin [color=gold penwidth=2]
+	penguin [fillcolor=lightpink1 style=filled]
+	penguin0 [label="" shape=circle width=0.3 xlabel=AND]
+	penguin0
+	penguin0 [fillcolor=lightpink1 style=filled]
+	bird
+	bird [fillcolor=lightpink1 style=filled]
+	bird0 [label="" shape=circle width=0.3 xlabel=AND]
+	bird0
+	bird0 [fillcolor=lightpink1 style=filled]
+	"lays eggs" [style=dotted]
+	bird0 -> "lays eggs"
+	flies
+	flies [fillcolor=lightpink1 style=filled]
+	bird0 -> flies
+	bird -> bird0
+	"has feathers"
+	"has feathers" [fillcolor=lightpink1 style=filled]
+	bird -> "has feathers"
+	penguin0 -> bird
+	"doesn't fly" [style=dotted]
+	penguin0 -> "doesn't fly"
+	penguin -> penguin0
+}
